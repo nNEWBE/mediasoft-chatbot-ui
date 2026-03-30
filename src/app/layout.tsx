@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Space_Grotesk, Hind_Siliguri, Geist } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "react-hot-toast";
+
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -27,16 +27,26 @@ export const metadata: Metadata = {
   description: "Advanced AI-powered business solutions and POS intelligence",
 };
 
+import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body className={`${fontOutfit.variable} ${fontSpace.variable} ${fontHind.variable} font-outfit antialiased selection:bg-brand-primary/20`}>
-        <Toaster position="top-right" reverseOrder={false} />
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${fontOutfit.variable} ${fontSpace.variable} ${fontHind.variable} font-outfit antialiased`}>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            forcedTheme="dark"
+            disableTransitionOnChange
+          >
+          <Toaster position="top-right" closeButton richColors />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

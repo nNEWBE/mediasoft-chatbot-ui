@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { UserPlus, User, Key, Mail, ArrowRight, Loader2 } from 'lucide-react';
 import api from '@/utils/axios';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { BackgroundBeams } from '@/components/ui/background-beams';
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative p-6 font-outfit">
+    <div className="min-h-screen flex items-center justify-center relative p-6 font-outfit overflow-hidden">
+      <BackgroundBeams />
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-brand-primary opacity-5 blur-[150px]" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-brand-secondary opacity-5 blur-[150px]" />
 

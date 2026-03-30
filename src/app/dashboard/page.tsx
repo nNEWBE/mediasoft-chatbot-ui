@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Bot, Send, Plus, MessageSquare, Database, Settings, 
-  LogOut, Sparkles, BookOpen, User, Hash, Paperclip, 
+  LogOut, BookOpen, User, Hash, Paperclip, 
   History, Info, MoreVertical, Loader2 
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 import { useAuthStore } from '@/store/authStore';
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 export default function DashboardPage() {
   const { 
@@ -38,7 +39,7 @@ export default function DashboardPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Scroll to bottom
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -70,7 +71,7 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen bg-surface text-white/90 overflow-hidden font-outfit">
       
-      {/* --- SIDEBAR: CONVERSATIONS --- */}
+
       <motion.aside 
         initial={false}
         animate={{ width: sidebarOpen ? 300 : 0, opacity: sidebarOpen ? 1 : 0 }}
@@ -99,7 +100,7 @@ export default function DashboardPage() {
                 : 'hover:bg-white/5 border border-transparent text-white/40 hover:text-white/70'
               }`}
             >
-              <MessageSquare size={16} />
+              <MessageSquare size={16} className="shrink-0" />
               <span className="truncate">{conv.title}</span>
             </button>
           ))}
@@ -111,13 +112,13 @@ export default function DashboardPage() {
              onClick={handleLogout}
              className="w-full flex items-center justify-start gap-3 p-3 rounded-xl hover:bg-red-500/10 text-white/30 hover:text-red-400 border-none h-auto"
            >
-             <LogOut size={16} />
+             <LogOut size={16} className="opacity-50 group-hover:opacity-100 transition-opacity" />
              Sign Out
            </Button>
         </div>
       </motion.aside>
 
-      {/* --- MAIN CHAT AREA --- */}
+
       <main className="flex-1 flex flex-col relative">
         
         {/* Header */}
@@ -147,12 +148,12 @@ export default function DashboardPage() {
                 Enterprise Active
               </Badge>
               <Avatar className="w-9 h-9 border border-white/10 bg-white/5 hover:border-brand-primary/50 transition-all cursor-pointer">
-                <AvatarFallback className="bg-transparent"><User size={16} className="text-white/40" /></AvatarFallback>
+                <AvatarFallback className="bg-transparent"><User size={16} className="text-white opacity-40" /></AvatarFallback>
               </Avatar>
           </div>
         </header>
 
-        {/* Messages List / Loading Area */}
+
         <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8">
            {isLoading && conversations.length === 0 ? (
              <div className="h-full flex flex-col items-center justify-center space-y-4">
@@ -193,7 +194,7 @@ export default function DashboardPage() {
                     <Avatar className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center border ${
                       msg.role === 'user' ? 'bg-white/5 border-white/10' : 'bg-brand-primary/10 border-brand-primary/20 text-brand-primary'
                     }`}>
-                      <AvatarFallback className="bg-transparent">{msg.role === 'user' ? <User size={18} /> : <Sparkles size={18} />}</AvatarFallback>
+                      <AvatarFallback className="bg-transparent">{msg.role === 'user' ? <User size={18} /> : <Bot size={18} />}</AvatarFallback>
                     </Avatar>
                     <div className={`space-y-2 flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                       <div className={`px-6 py-4 rounded-3xl text-sm leading-relaxed ${
@@ -224,7 +225,7 @@ export default function DashboardPage() {
            <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
+
         <div className="p-6 border-t border-white/5 bg-black/20">
            <form 
               onSubmit={handleSendMessage} 
@@ -279,7 +280,7 @@ export default function DashboardPage() {
                <div className="p-5 rounded-2xl border border-white/5 bg-white/2 space-y-4 shadow-inner">
                   <div className="flex items-center justify-between text-[11px]">
                      <span className="text-white/40 font-medium">Session Tokens</span>
-                     <span className="text-blue-400 font-mono font-bold">1.2k / 8k</span>
+                     <span className="text-primary font-mono font-bold">1.2k / 8k</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
                      <div className="h-full w-[15%] bg-linear-to-r from-brand-primary to-brand-secondary shadow-[0_0_8px_rgba(79,172,254,0.3)]" />

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import api from '@/utils/axios';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
