@@ -9,19 +9,21 @@ import api from '@/utils/axios';
 import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', formData);
-      localStorage.setItem('accessToken', data.data.accessToken);
-      localStorage.setItem('refreshToken', data.data.refreshToken);
+      const { user, accessToken, refreshToken } = data.data;
+      setAuth(user, accessToken, refreshToken);
       toast.success('Successfully logged in!');
       router.push('/dashboard');
     } catch (error: any) {
@@ -82,7 +84,7 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-brand-primary to-brand-secondary h-14 rounded-xl text-black font-bold flex items-center justify-center gap-2 hover:translate-y-[-2px] hover:shadow-[0_8px_30px_rgb(79,172,254,0.3)] transition-all active:scale-[0.98] mt-4 disabled:opacity-50 disabled:translate-y-0 border-none"
+            className="w-full bg-linear-to-r from-brand-primary to-brand-secondary h-14 rounded-xl text-black font-bold flex items-center justify-center gap-2 hover:translate-y-[-2px] hover:shadow-[0_8px_30px_rgb(79,172,254,0.3)] transition-all active:scale-[0.98] mt-4 disabled:opacity-50 disabled:translate-y-0 border-none"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
