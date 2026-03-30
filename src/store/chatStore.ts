@@ -27,13 +27,15 @@ interface ChatState {
   isLoading: boolean;
   isSending: boolean;
   
-  // Actions
+  
   fetchConversations: () => Promise<void>;
   fetchResources: () => Promise<void>;
   selectConversation: (conv: Conversation) => void;
   startNewChat: () => void;
   sendMessage: (content: string) => Promise<void>;
   setConversations: (conversations: Conversation[]) => void;
+  createResource: (title: string, content: string) => Promise<void>;
+  updateContext: (conversationId: string, context: string) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -75,7 +77,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ isSending: true });
     
     try {
-      // Optimistic update could go here but let's stick to the server response for consistency with the existing logic
+      
       const { data } = await api.post('/chatbot/send-message', {
         conversationId: currentConversation?._id,
         content
@@ -83,7 +85,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       
       const updatedConv = data.data;
       
-      // Update store state
+      
       if (!currentConversation) {
         set({ 
           conversations: [updatedConv, ...conversations],
@@ -99,6 +101,38 @@ export const useChatStore = create<ChatState>((set, get) => ({
       toast.error('Failed to get AI response');
     } finally {
       set({ isSending: false });
+    }
+  },
+
+  createResource: async (title: string, content: string) => {
+    try {
+      await api.post('/chatbot/resources', { title, content });
+      toast.success('Resource saved to Knowledge Cluster');
+      get().fetchResources(); 
+    } catch (err) {
+      toast.error('Failed to save resource');
+    }
+  },
+
+  updateContext: async (conversationId: string, context: string) => {
+    try {
+      await api.patch(`/chatbot/conversations/${conversationId}/context`, { context });
+      toast.success('Conversation context updated');
+      
+      const { conversations, currentConversation } = get();
+      
+      const updatedConversations = conversations.map(c => 
+        c._id === conversationId ? { ...c, context } : c
+      );
+
+      set({ 
+        conversations: updatedConversations,
+        currentConversation: currentConversation?._id === conversationId 
+          ? { ...currentConversation, context } 
+          : currentConversation
+      });
+    } catch (err) {
+      toast.error('Failed to update context');
     }
   },
 }));

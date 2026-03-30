@@ -44,7 +44,7 @@ export default function RootLayout({
             forcedTheme="dark"
             disableTransitionOnChange
           >
-          <Toaster position="top-right" closeButton richColors />
+          <Toaster position="bottom-right" theme="dark" closeButton richColors />
           {children}
         </ThemeProvider>
       </body>

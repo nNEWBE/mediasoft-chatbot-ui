@@ -3,13 +3,21 @@ import React, { useEffect, useRef, useState } from "react"
 import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 
-export const BackgroundBeams = ({ className }: { className?: string }) => {
+export const BackgroundBeams = ({ 
+  className,
+  interactive = true 
+}: { 
+  className?: string;
+  interactive?: boolean;
+}) => {
   const [gradientSettings, setGradientSettings] = useState({
     x: 0,
     y: 0,
   })
 
   useEffect(() => {
+    if (!interactive) return;
+
     const handleMouseMove = (event: MouseEvent) => {
       setGradientSettings({
         x: event.clientX,
@@ -22,7 +30,7 @@ export const BackgroundBeams = ({ className }: { className?: string }) => {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove)
     }
-  }, [])
+  }, [interactive])
 
   return (
     <div
@@ -31,12 +39,14 @@ export const BackgroundBeams = ({ className }: { className?: string }) => {
         className
       )}
     >
-      <div
-        className="absolute inset-0 z-[-1] opacity-[0.1]"
-        style={{
-          background: `radial-gradient(600px circle at ${gradientSettings.x}px ${gradientSettings.y}px, var(--color-brand-primary), transparent 80%)`,
-        }}
-      />
+      {interactive && (
+        <div
+          className="absolute inset-0 z-[-1] opacity-[0.1]"
+          style={{
+            background: `radial-gradient(600px circle at ${gradientSettings.x}px ${gradientSettings.y}px, var(--color-brand-primary), transparent 80%)`,
+          }}
+        />
+      )}
       <svg
         className="absolute inset-0 h-full w-full"
         xmlns="http://www.w3.org/2000/svg"
