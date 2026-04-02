@@ -26,13 +26,16 @@ interface ChatState {
   resources: Resource[];
   isLoading: boolean;
   isSending: boolean;
-  
+  isTyping: boolean;
+  abortController: AbortController | null;
   
   fetchConversations: () => Promise<void>;
   fetchResources: () => Promise<void>;
   selectConversation: (conv: Conversation) => void;
   startNewChat: () => void;
   sendMessage: (content: string) => Promise<void>;
+  setIsTyping: (isTyping: boolean) => void;
+  stopGeneration: () => void;
   setConversations: (conversations: Conversation[]) => void;
   createResource: (title: string, content: string) => Promise<void>;
   updateContext: (conversationId: string, context: string) => Promise<void>;
@@ -44,8 +47,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
   resources: [],
   isLoading: false,
   isSending: false,
+  isTyping: false,
+  abortController: null,
 
   setConversations: (conversations) => set({ conversations }),
+
+  setIsTyping: (isTyping) => set({ isTyping }),
+
+  stopGeneration: () => {
+    const { abortController } = get();
+    if (abortController) {
+      abortController.abort();
+    }
+    set({ isSending: false, isTyping: false, abortController: null });
+  },
 
   fetchConversations: async () => {
     set({ isLoading: true });
@@ -74,33 +89,73 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   sendMessage: async (content: string) => {
     const { currentConversation, conversations } = get();
-    set({ isSending: true });
-    
+    const userMsg: Message = { role: 'user', content };
+
+    const previousConversation = currentConversation;
+    const previousConversations = conversations;
+
+    if (currentConversation) {
+      set({
+        currentConversation: {
+          ...currentConversation,
+          messages: [...currentConversation.messages, userMsg],
+        },
+        isSending: true,
+      });
+    } else {
+      set({
+        currentConversation: {
+          _id: 'temp-' + Date.now(),
+          title: 'New Session',
+          messages: [userMsg],
+        } as Conversation,
+        isSending: true,
+      });
+    }
+
+    const controller = new AbortController();
+    set({ abortController: controller });
+
     try {
-      
       const { data } = await api.post('/chatbot/send-message', {
-        conversationId: currentConversation?._id,
+        conversationId: 
+          currentConversation?._id && !currentConversation._id.startsWith('temp-') 
+            ? currentConversation._id 
+            : undefined,
         content
+      }, {
+        signal: controller.signal
       });
       
       const updatedConv = data.data;
+      const isNewChat = !previousConversation || previousConversation._id.startsWith('temp-');
       
-      
-      if (!currentConversation) {
+      if (isNewChat) {
         set({ 
-          conversations: [updatedConv, ...conversations],
-          currentConversation: updatedConv 
+          conversations: [updatedConv, ...previousConversations],
+          currentConversation: updatedConv,
+          isSending: false,
+          abortController: null
         });
       } else {
         set({ 
-          conversations: conversations.map(c => c._id === updatedConv._id ? updatedConv : c),
-          currentConversation: updatedConv 
+          conversations: previousConversations.map(c => c._id === updatedConv._id ? updatedConv : c),
+          currentConversation: updatedConv,
+          isSending: false,
+          abortController: null
         });
       }
-    } catch (err) {
-      toast.error('Failed to get AI response');
-    } finally {
-      set({ isSending: false });
+    } catch (err: any) {
+      if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
+        console.log('Request aborted');
+      } else {
+        toast.error('Failed to get AI response');
+        set({ 
+          currentConversation: previousConversation,
+          conversations: previousConversations,
+        });
+      }
+      set({ isSending: false, abortController: null });
     }
   },
 

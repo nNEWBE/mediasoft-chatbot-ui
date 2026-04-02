@@ -42,7 +42,6 @@ export default function RootLayout({
             attribute="class"
             defaultTheme="dark"
             forcedTheme="dark"
-            disableTransitionOnChange
           >
           <Toaster position="bottom-right" theme="dark" closeButton richColors />
           {children}

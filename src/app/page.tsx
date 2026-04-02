@@ -12,16 +12,13 @@ import { Spotlight } from "@/components/ui/spotlight";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { Button as MovingButton } from "@/components/ui/moving-border";
 
-
 export default function Home() {
   return (
     <div className="relative min-h-screen w-full bg-background flex flex-col items-center justify-center overflow-hidden antialiased font-outfit">
-
       <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
       <BackgroundBeams />
 
       <main className="relative z-10 container mx-auto px-6 pt-20 pb-32 flex flex-col items-center text-center">
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -33,7 +30,6 @@ export default function Home() {
             Enterprise Intelligence v2.0
           </span>
         </motion.div>
-
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -56,7 +52,6 @@ export default function Home() {
           Harness the power of autonomous AI specialized for the Mediasoft ecosystem. 
           Real-time POS, ERP, and distribution intelligence at your fingertips.
         </motion.p>
-
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -87,7 +82,6 @@ export default function Home() {
             <span className="relative z-10">View Repository</span>
           </a>
         </motion.div>
-
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-32 max-w-7xl w-full">
           {[
@@ -134,10 +128,8 @@ export default function Home() {
         </div>
       </main>
 
-
       <div className="absolute bottom-0 left-0 right-0 h-64 bg-linear-to-t from-background via-background/80 to-transparent pointer-events-none z-20" />
       
-
       <div className="fixed top-0 right-0 p-10 opacity-10 blur-3xl pointer-events-none">
         <div className="w-96 h-96 rounded-full bg-primary" />
       </div>
