@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, AlertCircle, LucideIcon } from 'lucide-react';
+import { AlertCircle, LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ReactNode } from 'react';
 

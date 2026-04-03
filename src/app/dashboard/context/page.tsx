@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Plus, Edit3, Trash2, Search, Save, X,
-  FileText, AlertCircle, Bot
+  Plus, Edit3, Trash2, Save, X,
+  FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -158,7 +158,7 @@ export default function ContextManagementPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-white/2 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6 relative z-10">
         <div className="max-w-7xl mx-auto">
           <AnimatePresence>
             {(isCreatingLocal || editingId) && (
@@ -168,14 +168,14 @@ export default function ContextManagementPage() {
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="mb-8 p-px rounded-2xl bg-linear-to-br from-white/10 via-transparent to-white/5 overflow-hidden"
               >
-                <div className="bg-zinc-950/80 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-2xl">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h2 className="text-lg font-bold text-white font-space uppercase tracking-wider">
-                        {editingId ? 'Refine Knowledge' : 'Initialize Context'}
-                      </h2>
-                      <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] mt-1 font-medium">Add data for AI retrieval</p>
-                    </div>
+                  <div className="bg-zinc-950/80 backdrop-blur-xl rounded-2xl p-4 lg:p-6 border border-white/5 shadow-2xl">
+                    <div className="flex items-center justify-between mb-4 lg:mb-6">
+                      <div>
+                        <h2 className="text-base lg:text-lg font-bold text-white font-space uppercase tracking-wider">
+                          {editingId ? 'Refine Knowledge' : 'Initialize Context'}
+                        </h2>
+                        <p className="text-zinc-500 text-[9px] lg:text-[10px] uppercase tracking-[0.2em] mt-1 font-medium">Add data for AI retrieval</p>
+                      </div>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -241,13 +241,13 @@ export default function ContextManagementPage() {
           <div className="relative z-10 space-y-8">
             <div className="flex items-center justify-between pb-4 border-b border-white/5">
               <div className="flex items-center gap-6">
-                <h2 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.4em] flex items-center gap-4">
+                <h2 className="text-[9px] lg:text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em] lg:tracking-[0.4em] flex items-center gap-3 lg:gap-4">
                   Archive Repository
-                  <span className="h-px w-24 bg-linear-to-r from-zinc-800 to-transparent" />
+                  <span className="h-px w-12 lg:w-24 bg-linear-to-r from-zinc-800 to-transparent" />
                 </h2>
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-white/20" />
-                  <span className="text-[10px] font-bold text-white tabular-nums tracking-widest">
+                  <span className="text-[9px] lg:text-[10px] font-bold text-white tabular-nums tracking-widest">
                     INDEX {filteredContexts.length.toString().padStart(2, '0')}
                   </span>
                 </div>
@@ -300,14 +300,14 @@ export default function ContextManagementPage() {
                     >
                       <div className="absolute -inset-px bg-linear-to-br from-white/20 via-transparent to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0" />
                       
-                      <div className="relative z-10 h-full bg-zinc-950/60 backdrop-blur-md rounded-2xl border border-white/5 p-6 hover:bg-zinc-900/40 transition-all duration-300 flex flex-col">
+                      <div className="relative z-10 h-full bg-zinc-950/60 backdrop-blur-md rounded-2xl border border-white/5 p-4 lg:p-6 hover:bg-zinc-900/40 transition-all duration-300 flex flex-col">
                         <div className="flex items-start justify-between mb-6">
                           <div className="space-y-1">
-                            <h3 className="font-bold text-white text-base font-space uppercase tracking-wide truncate pr-2 group-hover:gradient-text transition-all duration-300">
+                            <h3 className="font-bold text-white text-sm lg:text-base font-space uppercase tracking-wide truncate pr-2 group-hover:gradient-text transition-all duration-300">
                               {context.title}
                             </h3>
                             <div className="flex items-center gap-2">
-                              <span className="text-[9px] font-bold text-white uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded-full border border-white/5">Active</span>
+                              <span className="text-[8px] lg:text-[9px] font-bold text-white uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded-full border border-white/5">Active</span>
                             </div>
                           </div>
                           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">

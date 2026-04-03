@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  History, Search, MessageSquare, Calendar, 
-  ArrowRight, Plus, Edit3, Trash2, ChevronLeft, ChevronRight, X, Bot, AlertCircle, Clock, ChevronDown
+  History, MessageSquare, 
+  ArrowRight, Trash2, ChevronRight, X, Clock, ChevronDown
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/DashboardHeader';
-import { toast } from 'sonner';
+
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 interface Message {
@@ -107,18 +107,18 @@ export default function ChatHistoryPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-white/2 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6 scrollbar-hide relative z-10">
         <div className="max-w-7xl mx-auto pb-20">
           <div className="relative z-10 space-y-8">
             <div className="flex items-center justify-between pb-4 border-b border-white/5">
               <div className="flex items-center gap-6">
-                <h2 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.4em] flex items-center gap-4">
+                <h2 className="text-[9px] lg:text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em] lg:tracking-[0.4em] flex items-center gap-3 lg:gap-4">
                   Archive Repository
-                  <span className="h-px w-24 bg-linear-to-r from-zinc-800 to-transparent" />
+                  <span className="h-px w-12 lg:w-24 bg-linear-to-r from-zinc-800 to-transparent" />
                 </h2>
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-white/20" />
-                  <span className="text-[10px] font-bold text-white tabular-nums tracking-widest">
+                  <span className="text-[9px] lg:text-[10px] font-bold text-white tabular-nums tracking-widest">
                     TOTAL {totalConversations.toString().padStart(2, '0')}
                   </span>
                 </div>
@@ -168,31 +168,33 @@ export default function ChatHistoryPage() {
                     >
                       <div className="absolute -inset-px bg-linear-to-r from-white/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                       
-                      <div className="relative z-10 bg-zinc-950/40 backdrop-blur-md rounded-2xl border border-white/5 p-5 flex items-center gap-6 hover:bg-zinc-900/40 hover:border-white/10 transition-all duration-300">
-                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
-                          <MessageSquare size={20} className="text-zinc-400 group-hover:text-white transition-colors" />
-                        </div>
-
-                        <div className="flex-1 min-w-0 pr-4">
-                          <div className="flex items-center gap-3 mb-1">
-                            <h3 className="font-bold text-white text-[15px] font-space uppercase tracking-wide truncate">
-                              {conv.title || 'Untitled Session'}
-                            </h3>
-                            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
-                              {conv.messages.length} NODES
-                            </span>
+                      <div className="relative z-10 bg-zinc-950/40 backdrop-blur-md rounded-2xl border border-white/5 p-4 lg:p-5 flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-6 hover:bg-zinc-900/40 hover:border-white/10 transition-all duration-300">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
+                            <MessageSquare size={18} className="text-zinc-400 group-hover:text-white transition-colors" />
                           </div>
-                          <p className="text-[13px] text-zinc-500 truncate font-light leading-relaxed">
-                            {getPreviewText(conv)}
-                          </p>
+
+                          <div className="flex-1 min-w-0 pr-2">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <h3 className="font-bold text-white text-sm lg:text-[15px] font-space uppercase tracking-wide truncate max-w-[200px]">
+                                {conv.title || 'Untitled Session'}
+                              </h3>
+                              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+                                {conv.messages.length} NODES
+                              </span>
+                            </div>
+                            <p className="text-[12px] lg:text-[13px] text-zinc-500 truncate font-light leading-relaxed">
+                              {getPreviewText(conv)}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-10">
-                          <div className="hidden md:flex flex-col items-end shrink-0">
-                            <span className="text-[9px] text-zinc-600 uppercase tracking-[0.2em] font-bold mb-1">Last Sync</span>
+                        <div className="flex items-center justify-between sm:justify-end gap-4 lg:gap-10 pt-4 sm:pt-0 border-t sm:border-t-0 border-white/5">
+                          <div className="flex flex-col items-start sm:items-end shrink-0">
+                            <span className="text-[8px] lg:text-[9px] text-zinc-600 uppercase tracking-[0.2em] font-bold mb-0.5 lg:mb-1">Last Sync</span>
                             <div className="flex items-center gap-1.5 text-zinc-400">
-                              <Clock size={10} className="text-zinc-600" />
-                              <span className="text-[11px] tabular-nums font-medium">{formatDate(conv.updatedAt)}</span>
+                              <Clock size={9} className="text-zinc-600" />
+                              <span className="text-[10px] lg:text-[11px] tabular-nums font-medium">{formatDate(conv.updatedAt)}</span>
                             </div>
                           </div>
 
@@ -200,10 +202,10 @@ export default function ChatHistoryPage() {
                             <Button
                               onClick={() => handleOpenChat(conv)}
                               variant="ghost"
-                              className="bg-white hover:bg-zinc-200 text-black h-11 px-6 rounded-xl flex items-center gap-2 group/btn transition-all font-bold text-xs uppercase tracking-tight"
+                              className="bg-white hover:bg-zinc-200 text-black h-9 lg:h-11 px-4 lg:px-6 rounded-xl flex items-center gap-2 group/btn transition-all font-bold text-[10px] lg:text-xs uppercase tracking-tight"
                             >
                               Access
-                              <ArrowRight size={14} className="-rotate-45 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform duration-300" />
+                              <ArrowRight size={13} className="-rotate-45 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform duration-300" />
                             </Button>
 
                             <Button
@@ -212,9 +214,9 @@ export default function ChatHistoryPage() {
                                 setConversationToDelete(conv);
                               }}
                               variant="ghost"
-                              className="w-11 h-11 p-0 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 text-zinc-600 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all shadow-sm active:scale-90"
+                              className="w-9 h-9 lg:w-11 lg:h-11 p-0 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 text-zinc-600 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all shadow-sm active:scale-90"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={15} />
                             </Button>
                           </div>
                         </div>

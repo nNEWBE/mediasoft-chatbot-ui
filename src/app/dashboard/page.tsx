@@ -1,11 +1,11 @@
 'use client';
 
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Send, Bot, Plus, Loader2, User,
   LineChart, Boxes, Store, Code,
   Settings, LayoutDashboard, ChevronDown, Square
 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -13,11 +13,11 @@ import { useChatStore } from '@/store/chatStore';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-function TypewriterMarkdown({ content, isLast, isNew }: { content: string; isLast: boolean; isNew: boolean }) {
+const TypewriterMarkdown = React.memo(function TypewriterMarkdown({ content, isLast, isNew }: { content: string; isLast: boolean; isNew: boolean }) {
   const [displayedContent, setDisplayedContent] = useState(isNew ? '' : content);
   const [isTypingLocal, setIsTypingLocal] = useState(isNew);
   const { setIsTyping, isTyping } = useChatStore();
@@ -134,7 +134,7 @@ function TypewriterMarkdown({ content, isLast, isNew }: { content: string; isLas
             <h3 className="text-base font-semibold mb-2 mt-4 first:mt-0 text-zinc-100" {...props} />
           ),
           blockquote: ({ node, children, ...props }) => (
-            <blockquote className="border-l-3 border-white pl-4 py-2 my-4 bg-zinc-900/50 rounded-r-lg italic text-zinc-300" {...props}>
+            <blockquote className="border-l-3 border-white pl-4 py-2 m-4 bg-zinc-900/50 rounded-r-lg italic text-zinc-300" {...props}>
               {children}
             </blockquote>
           ),
@@ -242,7 +242,7 @@ function TypewriterMarkdown({ content, isLast, isNew }: { content: string; isLas
       </ReactMarkdown>
     </div>
   );
-}
+});
 
 export default function DashboardPage() {
   const [input, setInput] = useState('');
@@ -284,8 +284,13 @@ export default function DashboardPage() {
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    const isScrolledUp = scrollHeight - scrollTop - clientHeight > 100;
-    setShowScrollButton(isScrolledUp);
+    const isScrolledUp = scrollHeight - scrollTop - clientHeight > 300;
+    
+    // Only update state if value actually changed to minimize re-renders
+    setShowScrollButton(prev => {
+      if (prev !== isScrolledUp) return isScrolledUp;
+      return prev;
+    });
   };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -353,11 +358,11 @@ export default function DashboardPage() {
                     <Bot size={44} className="text-black" />
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border-4 border-black" />
                   </div>
-                  <div className="space-y-4 px-4">
-                    <h2 className="text-4xl lg:text-5xl font-bold text-white font-space tracking-tight leading-none uppercase">
+                  <div className="space-y-4 px-4 overflow-hidden w-full">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white font-space tracking-tight leading-tight uppercase wrap-break-word">
                       How can I <span className="gradient-text">Help you?</span>
                     </h2>
-                    <p className="text-zinc-500 max-w-sm mx-auto text-xs lg:text-sm leading-relaxed font-medium mt-6 uppercase tracking-widest opacity-80">
+                    <p className="text-zinc-500 max-w-sm mx-auto text-[10px] lg:text-sm leading-relaxed font-medium mt-4 lg:mt-6 uppercase tracking-widest opacity-80">
                       Secure AI Assistant Ready
                     </p>
                   </div>
@@ -391,54 +396,53 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-10 w-full pb-10">
                 {(() => {
-                  return filteredMessages.map((msg, idx) => (
-                    <div
-                      key={`${currentConversation._id}-${idx}`}
-                      className={`flex w-full animate-in fade-in slide-in-from-bottom-3 duration-500 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`flex gap-4 max-w-[92%] lg:max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <div className="shrink-0 flex flex-col justify-end mb-1">
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all shadow-md ${msg.role === 'user'
-                              ? 'bg-white border-zinc-200'
-                              : 'bg-zinc-900 border-zinc-800'
-                            }`}>
-                            {msg.role === 'user' ? <User size={14} className="text-black" /> : <Bot size={14} className="text-zinc-400" />}
-                          </div>
-                        </div>
+                  return filteredMessages.map((msg, idx) => {
+                    const isLast = idx === filteredMessages.length - 1;
+                    const isNew = idx >= sessionFilteredCountRef.current;
+                    const msgId = `${currentConversation._id}-${idx}`;
 
-                        <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                          <div className={`transition-all relative overflow-hidden ${msg.role === 'user'
-                              ? 'px-6 py-3.5 rounded-2xl font-bold text-[15px] bg-white text-black rounded-br-none shadow-2xl border border-white'
-                              : 'px-8 py-6 rounded-2xl text-[16px] leading-relaxed bg-white/5 backdrop-blur-md text-white rounded-bl-none border border-white/10 shadow-2xl font-mixed'
-                            }`}>
-                            {msg.role !== 'user' ? (
-                              <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
-                            ) : (
-                              <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-black/5 to-transparent pointer-events-none" />
-                            )}
-                            {msg.role === 'user' ? (
-                              msg.content
-                            ) : (
-                              <div className={`flex flex-col gap-1 w-full max-w-none ${idx === filteredMessages.length - 1 ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`}>
-                                {(() => {
-                                  const isLast = idx === filteredMessages.length - 1;
-                                  const isNew = idx >= sessionFilteredCountRef.current;
-                                  
-                                  return (
-                                    <TypewriterMarkdown
-                                      content={msg.content}
-                                      isLast={isLast}
-                                      isNew={isNew}
-                                    />
-                                  );
-                                })()}
-                              </div>
-                            )}
+                    return (
+                      <div
+                        key={msgId}
+                        className={`flex w-full animate-in fade-in slide-in-from-bottom-3 duration-500 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`flex gap-4 max-w-[92%] lg:max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                          <div className="shrink-0 flex flex-col justify-end mb-1">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all shadow-md ${msg.role === 'user'
+                                ? 'bg-white border-zinc-200'
+                                : 'bg-zinc-900 border-zinc-800'
+                              }`}>
+                              {msg.role === 'user' ? <User size={14} className="text-black" /> : <Bot size={14} className="text-zinc-400" />}
+                            </div>
+                          </div>
+
+                          <div className={`flex flex-col w-full ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                            <div className={`transition-all relative overflow-hidden w-full ${msg.role === 'user'
+                                ? 'px-4 lg:px-6 py-3 lg:py-3.5 rounded-2xl font-bold text-[13px] lg:text-[15px] bg-white text-black rounded-br-none shadow-2xl border border-white'
+                                : 'px-5 lg:px-8 py-4 lg:py-6 rounded-2xl text-[14px] lg:text-[16px] leading-relaxed bg-white/10 text-white rounded-bl-none border border-white/10 shadow-2xl font-mixed'
+                              }`}>
+                              {msg.role !== 'user' ? (
+                                <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
+                              ) : (
+                                <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-black/5 to-transparent pointer-events-none" />
+                              )}
+                              {msg.role === 'user' ? (
+                                msg.content
+                              ) : (
+                                <div className={`flex flex-col gap-1 w-full max-w-none ${isLast ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`}>
+                                  <TypewriterMarkdown
+                                    content={msg.content}
+                                    isLast={isLast}
+                                    isNew={isNew}
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ));
+                    );
+                  });
                 })()}
 
                 {isSending && (
@@ -449,8 +453,8 @@ export default function DashboardPage() {
                           <Bot size={14} className="text-zinc-400 animate-pulse" />
                         </div>
                       </div>
-                      <div className="flex flex-col items-start font-hind">
-                        <div className={`px-6 py-4 rounded-2xl bg-white/5 backdrop-blur-md text-zinc-400 rounded-bl-none border border-white/10 shadow-2xl flex items-center gap-4`}>
+                      <div className="flex flex-col items-start font-hind w-full">
+                        <div className={`px-4 lg:px-6 py-3 lg:py-4 rounded-2xl bg-white/5 backdrop-blur-md text-zinc-400 rounded-bl-none border border-white/10 shadow-2xl flex items-center gap-3 lg:gap-4`}>
                           <div className="flex gap-2 items-center">
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
                             <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.15s]" />
@@ -493,19 +497,19 @@ export default function DashboardPage() {
               <div className="flex-1 bg-black/40 backdrop-blur-xl border border-white/5 rounded-2xl focus-within:border-white/10 transition-all shadow-2xl relative overflow-hidden p-1">
                 <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
 
-                <textarea
-                  rows={1}
-                  value={input}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage(e);
-                    }
-                  }}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask Mediasoft AI anything about your enterprise architecture..."
-                  className="w-full bg-transparent border-none focus:outline-none resize-none py-4 pl-6 pr-16 text-white placeholder-zinc-800 max-h-40 text-[14px] font-bold tracking-tight"
-                />
+                  <textarea
+                    rows={1}
+                    value={input}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e);
+                      }
+                    }}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Ask Mediasoft AI..."
+                    className="w-full bg-transparent border-none focus:outline-none resize-none py-3.5 lg:py-4 pl-4 lg:pl-6 pr-14 lg:pr-16 text-white placeholder-zinc-800 max-h-40 text-[13px] lg:text-[14px] font-bold tracking-tight"
+                  />
 
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                   <Button
@@ -527,7 +531,7 @@ export default function DashboardPage() {
               <div className="w-5 h-5 rounded-md bg-zinc-900 border border-zinc-600 flex items-center justify-center shadow-inner">
                 <Bot size={10} className="text-zinc-200" />
               </div>
-              <span className="text-[12px] font-bold text-zinc-400 whitespace-nowrap">
+              <span className="text-[10px] lg:text-[12px] font-bold text-zinc-400 text-center">
                 Architecture is the synchronization of structure and intent
               </span>
             </div>
@@ -542,7 +546,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
             onClick={() => scrollToBottom()}
-            className="fixed bottom-32 right-12 z-50 w-10 h-10 rounded-full bg-white text-black shadow-2xl flex items-center justify-center hover:bg-zinc-200 transition-all border-4 border-black/20 group backdrop-blur-md"
+            className="fixed bottom-24 sm:bottom-32 right-4 sm:right-12 z-50 w-10 h-10 rounded-full bg-white text-black shadow-2xl flex items-center justify-center hover:bg-zinc-200 transition-all border-4 border-black/20 group backdrop-blur-md"
             aria-label="Scroll to bottom"
           >
             <div className="absolute inset-0 rounded-full bg-white/20 animate-ping group-hover:hidden" />

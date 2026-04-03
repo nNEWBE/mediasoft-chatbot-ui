@@ -1,18 +1,17 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import {
-  LayoutDashboard, Database, Settings, LogOut, BookOpen,
-  User, X, FileText, History, FolderOpen, Bot,
-  Search, Bell, Command, Plus, ChevronDown, Info,
-  ChevronRight, Clock, Menu
+  LayoutDashboard, LogOut, BookOpen,
+  User, X, FileText, History, Bot,
+  Search, Bell, Command, ChevronDown, Info,
+  Menu
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function DashboardLayout({
@@ -27,11 +26,8 @@ export default function DashboardLayout({
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const { 
-    conversations, 
-    currentConversation, 
     selectConversation, 
     fetchConversations,
-    startNewChat
   } = useChatStore();
 
   useEffect(() => {
@@ -47,12 +43,7 @@ export default function DashboardLayout({
     fetchConversations();
   }, []);
 
-  const handleHistorySelect = (conv: any) => {
-    selectConversation(conv);
-    if (pathname !== '/dashboard') {
-      router.push('/dashboard');
-    }
-  };
+
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -112,7 +103,7 @@ export default function DashboardLayout({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 bg-black/80 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -122,12 +113,13 @@ export default function DashboardLayout({
         initial={false}
         animate={{
           width: sidebarOpen ? 260 : (isMobile ? 0 : 80),
+          x: isMobile && !sidebarOpen ? -260 : 0,
           opacity: 1
         }}
         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-        className={`relative z-50 bg-[#080808]/60 backdrop-blur-2xl border-r border-white/5 flex flex-col h-full overflow-hidden shrink-0 shadow-2xl group/sidebar ${isMobile && !sidebarOpen ? 'pointer-events-none' : ''}`}
+        className={`fixed lg:relative z-50 bg-[#080808]/60 backdrop-blur-2xl border-r border-white/5 flex flex-col h-full overflow-hidden shrink-0 shadow-2xl group/sidebar ${isMobile && !sidebarOpen ? 'pointer-events-none' : ''}`}
       >
-        <div className="p-6 flex items-center justify-between border-b border-white/5">
+        <div className="p-4 lg:p-6 flex items-center justify-between border-b border-white/5">
           <AnimatePresence mode="wait">
             {sidebarOpen ? (
               <motion.div
@@ -159,15 +151,17 @@ export default function DashboardLayout({
               </motion.div>
             )}
           </AnimatePresence>
-          <button
-            onClick={toggleSidebar}
-            className="lg:hidden text-zinc-400 hover:bg-zinc-800 hover:text-white p-2 rounded-lg"
-          >
-            <X size={18} />
-          </button>
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="text-zinc-400 hover:bg-zinc-800 hover:text-white p-2 rounded-lg"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
-        <nav className="p-3 flex-1 flex flex-col gap-4">
+        <nav className="p-3 flex-1 flex flex-col gap-4 overflow-y-auto">
           <ul className="space-y-0.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -175,11 +169,11 @@ export default function DashboardLayout({
 
               return (
                 <li key={item.href} className="relative px-1">
-                  <Link href={item.href}>
+                  <Link href={item.href} onClick={() => isMobile && setSidebarOpen(false)}>
                     <div
                       className={`w-full flex items-center gap-2.5 p-1.5 rounded-lg transition-all cursor-pointer relative group ${
                         isActive ? 'text-white' : 'text-zinc-500 hover:text-white hover:bg-white/5'
-                      } ${!sidebarOpen ? 'justify-center' : ''}`}
+                      } ${!sidebarOpen && !isMobile ? 'justify-center' : ''}`}
                     >
                       {isActive && (
                         <motion.div
@@ -206,7 +200,7 @@ export default function DashboardLayout({
                         </div>
                       </div>
 
-                      {sidebarOpen && (
+                      {(sidebarOpen || (isMobile && sidebarOpen)) && (
                         <motion.span 
                           initial={{ opacity: 0, x: -5 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -216,7 +210,7 @@ export default function DashboardLayout({
                         </motion.span>
                       )}
 
-                      {sidebarOpen && item.badge && (
+                      {(sidebarOpen || (isMobile && sidebarOpen)) && item.badge && (
                         <motion.span 
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
@@ -233,7 +227,7 @@ export default function DashboardLayout({
           </ul>
         </nav>
 
-        {sidebarOpen ? (
+        {(sidebarOpen || (isMobile && sidebarOpen)) ? (
           <div className="p-4 border-t border-white/5">
              <div className="mx-1 p-4 rounded-2xl bg-linear-to-br from-white/5 to-transparent border border-white/5 relative overflow-hidden group">
                 <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors duration-500" />
@@ -262,8 +256,8 @@ export default function DashboardLayout({
       </motion.aside>
 
       <main className="flex-1 flex flex-col min-w-0 bg-transparent font-outfit relative z-10 transition-all">
-        <header className="h-16 border-b border-white/5 bg-black/20 backdrop-blur-xl flex items-center justify-between px-8 sticky top-0 z-40 shadow-sm">
-          <div className="flex items-center gap-4">
+        <header className="h-16 border-b border-white/5 bg-black/20 backdrop-blur-xl flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40 shadow-sm">
+          <div className="flex items-center gap-3 lg:gap-4">
               <button
                 onClick={toggleSidebar}
                 className="text-zinc-500 hover:text-white hover:bg-zinc-900 transition-all p-2 rounded-lg bg-zinc-950 border border-zinc-800/50 group/toggle"
@@ -271,15 +265,15 @@ export default function DashboardLayout({
                 <Menu size={18} className={`transition-transform duration-300 ${!sidebarOpen ? 'rotate-180 scale-x-[-1]' : ''}`} />
               </button>
               
-              <div className="flex items-center gap-2 text-zinc-500 text-sm font-medium">
-                 <span className="hover:text-white cursor-pointer transition-colors hidden sm:block">Workspace</span>
-                 <span className="hidden sm:block opacity-30">/</span>
-                 <span className="text-white font-semibold font-space tracking-tight">{activeItem.label}</span>
+              <div className="flex items-center gap-2 text-zinc-500 text-sm font-medium overflow-hidden">
+                 <span className="hover:text-white cursor-pointer transition-colors hidden lg:block whitespace-nowrap">Workspace</span>
+                 <span className="hidden lg:block opacity-30">/</span>
+                 <span className="text-white font-semibold font-space tracking-tight truncate max-w-[120px] sm:max-w-none">{activeItem.label}</span>
               </div>
           </div>
 
-          <div className="flex items-center gap-3">
-             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-lg text-zinc-500 hover:bg-zinc-900 transition-all cursor-pointer group">
+          <div className="flex items-center gap-2 lg:gap-3">
+             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-lg text-zinc-500 hover:bg-zinc-900 transition-all cursor-pointer group">
                 <Search size={14} className="group-hover:text-zinc-300" />
                 <span className="text-xs">Search anything...</span>
                 <div className="flex items-center gap-1 ml-4 border border-zinc-700/50 px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] text-zinc-400 font-mono">
@@ -295,14 +289,14 @@ export default function DashboardLayout({
              <div className="relative">
                <button 
                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                 className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all ${
+                 className={`flex items-center gap-2 p-1 lg:p-1.5 rounded-lg border transition-all ${
                    userMenuOpen ? 'bg-zinc-900 border-zinc-700' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
                  }`}
                >
                  <div className="w-6.5 h-6.5 rounded bg-white flex items-center justify-center text-black font-bold text-[10px] font-space tracking-tighter">
                     {getInitials(user?.name || '')}
                  </div>
-                 <ChevronDown size={14} className={`text-zinc-500 transition-transform duration-300 ${userMenuOpen ? 'rotate-180' : ''}`} />
+                 <ChevronDown size={14} className={`text-zinc-500 transition-transform duration-300 hidden sm:block ${userMenuOpen ? 'rotate-180' : ''}`} />
                </button>
 
                <AnimatePresence>
@@ -344,8 +338,8 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <div className="flex-1 relative min-h-0">
-          <div className="absolute inset-0">
+        <div className="flex-1 relative min-h-0 overflow-hidden">
+          <div className="absolute inset-0 overflow-y-auto">
             {children}
           </div>
         </div>
