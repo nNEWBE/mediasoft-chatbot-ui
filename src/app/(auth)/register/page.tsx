@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { UserPlus, User, Key, Mail, UserCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
-import api from '@/utils/axios';
+import api from '@/utils/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -2,8 +2,9 @@
 
 import {
   LayoutDashboard, Database, Settings, LogOut, BookOpen,
-  User, Menu, X, FileText, History, FolderOpen, Bot,
-  Search, Bell, Command, Plus, ChevronDown, Info
+  User, X, FileText, History, FolderOpen, Bot,
+  Search, Bell, Command, Plus, ChevronDown, Info,
+  ChevronRight, Clock, Menu
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
@@ -11,7 +12,7 @@ import { useChatStore } from '@/store/chatStore';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function DashboardLayout({
@@ -19,11 +20,39 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const { 
+    conversations, 
+    currentConversation, 
+    selectConversation, 
+    fetchConversations,
+    startNewChat
+  } = useChatStore();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  const handleHistorySelect = (conv: any) => {
+    selectConversation(conv);
+    if (pathname !== '/dashboard') {
+      router.push('/dashboard');
+    }
+  };
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -57,7 +86,7 @@ export default function DashboardLayout({
       href: '/dashboard/history',
       icon: History,
       label: 'Chat History',
-      badge: 'Soon'
+      badge: null
     },
     {
       href: '/dashboard/knowledge',
@@ -70,9 +99,15 @@ export default function DashboardLayout({
   const activeItem = navItems.find(item => item.href === pathname) || navItems[0];
 
   return (
-    <div className="flex h-screen bg-black text-white overflow-hidden font-outfit">
+    <div className="flex h-screen bg-[#050505] text-zinc-100 overflow-hidden font-outfit relative">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-15%] left-[-15%] w-[40%] h-[40%] rounded-full bg-white/3 blur-[140px] animate-pulse" />
+        <div className="absolute bottom-[-15%] right-[-15%] w-[40%] h-[40%] rounded-full bg-white/2 blur-[140px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-white/1 blur-[160px]" />
+      </div>
+
       <AnimatePresence>
-        {sidebarOpen && (
+        {isMobile && sidebarOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -86,22 +121,44 @@ export default function DashboardLayout({
       <motion.aside
         initial={false}
         animate={{
-          width: sidebarOpen ? 240 : 0,
-          opacity: sidebarOpen ? 1 : 0
+          width: sidebarOpen ? 260 : (isMobile ? 0 : 80),
+          opacity: 1
         }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="bg-zinc-950 border-r border-zinc-800 flex flex-col z-50 lg:z-50 min-w-[240px] max-w-[240px] overflow-hidden"
+        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+        className={`relative z-50 bg-[#080808]/60 backdrop-blur-2xl border-r border-white/5 flex flex-col h-full overflow-hidden shrink-0 shadow-2xl group/sidebar ${isMobile && !sidebarOpen ? 'pointer-events-none' : ''}`}
       >
-        <div className="p-4 flex items-center justify-between border-b border-zinc-800">
-          <div className="flex items-center gap-2.5">
-             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                <Bot className="w-4.5 h-4.5 text-black" />
-             </div>
-             <div>
-               <h1 className="font-bold text-white font-space text-base">Mediasoft AI</h1>
-               <p className="text-[10px] text-zinc-500 font-outfit uppercase tracking-wider">Enterprise</p>
-             </div>
-          </div>
+        <div className="p-6 flex items-center justify-between border-b border-white/5">
+          <AnimatePresence mode="wait">
+            {sidebarOpen ? (
+              <motion.div
+                key="expanded-logo"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex items-center gap-2.5"
+              >
+                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                    <Bot className="w-4.5 h-4.5 text-black" />
+                 </div>
+                 <div>
+                   <h1 className="font-bold text-white font-space text-base whitespace-nowrap">Mediasoft AI</h1>
+                   <p className="text-[10px] text-zinc-500 font-outfit uppercase tracking-wider">Enterprise</p>
+                 </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="collapsed-logo"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="w-full flex justify-center"
+              >
+                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                  <Bot className="w-4.5 h-4.5 text-black" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <button
             onClick={toggleSidebar}
             className="lg:hidden text-zinc-400 hover:bg-zinc-800 hover:text-white p-2 rounded-lg"
@@ -121,13 +178,13 @@ export default function DashboardLayout({
                   <Link href={item.href}>
                     <div
                       className={`w-full flex items-center gap-2.5 p-1.5 rounded-lg transition-all cursor-pointer relative group ${
-                        isActive ? 'text-white' : 'text-zinc-500 hover:text-white hover:bg-zinc-900/40'
-                      }`}
+                        isActive ? 'text-white' : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                      } ${!sidebarOpen ? 'justify-center' : ''}`}
                     >
                       {isActive && (
                         <motion.div
                           layoutId="sidebar-active-pill"
-                          className="absolute inset-0 bg-zinc-900 rounded-lg"
+                          className="absolute inset-0 bg-white/5 rounded-lg"
                           transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                         />
                       )}
@@ -137,25 +194,36 @@ export default function DashboardLayout({
                           {isActive && (
                             <motion.div
                               layoutId="sidebar-active-icon-bg"
-                              className="absolute inset-0 bg-white rounded-md"
+                              className="absolute inset-0 bg-white rounded-md shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                               transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                             />
                           )}
-                          <div className={`w-8 h-8 rounded-md flex items-center justify-center transition-all relative z-10 ${
-                            !isActive ? 'bg-zinc-950/50' : ''
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all relative z-10 ${
+                            !isActive ? 'bg-white/5 border border-white/5 group-hover:border-white/10' : ''
                           }`}>
-                            <Icon size={16} className={isActive ? 'text-black' : 'text-zinc-500 group-hover:text-zinc-300'} />
+                            <Icon size={16} className={isActive ? 'text-black' : 'text-zinc-500 group-hover:text-zinc-100 transition-colors'} />
                           </div>
                         </div>
                       </div>
 
-                      <span className="font-medium text-sm flex-1 text-left relative z-10">
-                        {item.label}
-                      </span>
-                      {item.badge && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-900/50 text-zinc-600 border border-zinc-800/50 relative z-10">
+                      {sidebarOpen && (
+                        <motion.span 
+                          initial={{ opacity: 0, x: -5 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="font-semibold text-sm flex-1 text-left relative z-10 truncate whitespace-nowrap"
+                        >
+                          {item.label}
+                        </motion.span>
+                      )}
+
+                      {sidebarOpen && item.badge && (
+                        <motion.span 
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-white text-black relative z-10 whitespace-nowrap"
+                        >
                           {item.badge}
-                        </span>
+                        </motion.span>
                       )}
                     </div>
                   </Link>
@@ -165,41 +233,49 @@ export default function DashboardLayout({
           </ul>
         </nav>
 
-        <div className="p-2 border-t border-zinc-800">
-           <div className="mx-1 p-3.5 rounded-xl bg-linear-to-br from-zinc-900 to-black border border-zinc-800/50 relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors duration-500" />
-              
-              <div className="relative z-10 space-y-2.5">
-                <div className="flex items-center gap-2">
-                   <div className="w-5 h-5 rounded-md bg-zinc-800 border border-zinc-700/50 flex items-center justify-center">
-                      <Info size={11} className="text-zinc-400" />
-                   </div>
-                   <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Platform Tip</span>
-                </div>
+        {sidebarOpen ? (
+          <div className="p-4 border-t border-white/5">
+             <div className="mx-1 p-4 rounded-2xl bg-linear-to-br from-white/5 to-transparent border border-white/5 relative overflow-hidden group">
+                <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors duration-500" />
                 
-                <p className="text-[11px] text-zinc-400 font-medium leading-normal">
-                   AI responses are improved by your <span className="text-white">Knowledge Base</span>. Add documents for higher accuracy.
-                </p>
-              </div>
-           </div>
-        </div>
+                <div className="relative z-10 space-y-3">
+                  <div className="flex items-center gap-2">
+                     <div className="w-5 h-5 rounded-md bg-white flex items-center justify-center">
+                        <Info size={11} className="text-black" />
+                     </div>
+                     <span className="text-[10px] font-bold text-white uppercase tracking-widest">Platform Sync</span>
+                  </div>
+                  
+                  <p className="text-[11px] text-zinc-500 font-medium leading-relaxed">
+                     AI efficiency scales with your <span className="text-white">Knowledge Base</span>.
+                  </p>
+                </div>
+             </div>
+          </div>
+        ) : (
+          <div className="p-4 border-t border-white/5 flex justify-center">
+             <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-zinc-500 hover:text-white transition-colors cursor-help">
+                <Info size={14} />
+             </div>
+          </div>
+        )}
       </motion.aside>
 
-      <main className="flex-1 flex flex-col min-w-0 bg-black font-outfit relative z-0">
-        <header className="h-14 border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40">
+      <main className="flex-1 flex flex-col min-w-0 bg-transparent font-outfit relative z-10 transition-all">
+        <header className="h-16 border-b border-white/5 bg-black/20 backdrop-blur-xl flex items-center justify-between px-8 sticky top-0 z-40 shadow-sm">
           <div className="flex items-center gap-4">
-             <button
-               onClick={toggleSidebar}
-               className="lg:hidden text-zinc-400 hover:bg-zinc-800 p-2 rounded-lg"
-             >
-               <Menu size={20} />
-             </button>
-             
-             <div className="flex items-center gap-2 text-zinc-500 text-sm font-medium">
-                <span className="hover:text-white cursor-pointer transition-colors hidden sm:block">Workspace</span>
-                <span className="hidden sm:block opacity-30">/</span>
-                <span className="text-white font-semibold font-space tracking-tight">{activeItem.label}</span>
-             </div>
+              <button
+                onClick={toggleSidebar}
+                className="text-zinc-500 hover:text-white hover:bg-zinc-900 transition-all p-2 rounded-lg bg-zinc-950 border border-zinc-800/50 group/toggle"
+              >
+                <Menu size={18} className={`transition-transform duration-300 ${!sidebarOpen ? 'rotate-180 scale-x-[-1]' : ''}`} />
+              </button>
+              
+              <div className="flex items-center gap-2 text-zinc-500 text-sm font-medium">
+                 <span className="hover:text-white cursor-pointer transition-colors hidden sm:block">Workspace</span>
+                 <span className="hidden sm:block opacity-30">/</span>
+                 <span className="text-white font-semibold font-space tracking-tight">{activeItem.label}</span>
+              </div>
           </div>
 
           <div className="flex items-center gap-3">

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Outfit, Space_Grotesk, Hind_Siliguri, Geist } from "next/font/google";
 import "./globals.css";
-
 import { cn } from "@/lib/utils";
+import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -27,9 +28,6 @@ export const metadata: Metadata = {
   description: "Advanced AI-powered business solutions and POS intelligence",
 };
 
-import { Toaster } from "sonner";
-import { ThemeProvider } from "@/components/theme-provider";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${fontOutfit.variable} ${fontSpace.variable} ${fontHind.variable} font-outfit antialiased`}>
+      <body className={`${fontOutfit.variable} ${fontSpace.variable} ${fontHind.variable} ${geist.variable} font-outfit antialiased`}>
         <ThemeProvider
             attribute="class"
             defaultTheme="dark"

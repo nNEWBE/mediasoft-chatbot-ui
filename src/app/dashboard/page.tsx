@@ -11,39 +11,59 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useChatStore } from '@/store/chatStore';
 import { Button } from '@/components/ui/button';
+import { DashboardHeader } from '@/components/DashboardHeader';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-function TypewriterMarkdown({ content, isLast }: { content: string; isLast: boolean }) {
-  const [displayedContent, setDisplayedContent] = useState(isLast ? '' : content);
-  const [isTypingLocal, setIsTypingLocal] = useState(isLast);
+function TypewriterMarkdown({ content, isLast, isNew }: { content: string; isLast: boolean; isNew: boolean }) {
+  const [displayedContent, setDisplayedContent] = useState(isNew ? '' : content);
+  const [isTypingLocal, setIsTypingLocal] = useState(isNew);
   const { setIsTyping, isTyping } = useChatStore();
 
   useEffect(() => {
-    if (!isLast) {
+    if (!isNew) {
       setDisplayedContent(content);
       setIsTypingLocal(false);
       return;
     }
 
     let index = 0;
-    const speed = 15;
-    const charsPerChunk = 2;
+    const speed = 10;
 
     setDisplayedContent('');
     setIsTypingLocal(true);
     setIsTyping(true);
 
     const interval = setInterval(() => {
-      index += charsPerChunk;
+      index += 3;
       if (index >= content.length) {
         setDisplayedContent(content);
         setIsTypingLocal(false);
         setIsTyping(false);
         clearInterval(interval);
       } else {
-        setDisplayedContent(content.slice(0, index));
+        let slicePoint = index;
+        const currentSlice = content.slice(0, index);
+        
+        const lastOpenBracket = currentSlice.lastIndexOf('[');
+        const lastCloseBracket = currentSlice.lastIndexOf(']');
+        const lastBacktick = currentSlice.lastIndexOf('`');
+        
+        if (lastOpenBracket > lastCloseBracket && lastOpenBracket > index - 20) {
+          const nextCloseBracket = content.indexOf(']', index);
+          if (nextCloseBracket !== -1 && nextCloseBracket < content.length) {
+            slicePoint = nextCloseBracket + 1;
+          }
+        } else if (lastBacktick % 2 === 1) {
+          const nextBacktick = content.indexOf('`', index);
+          if (nextBacktick !== -1) {
+            slicePoint = nextBacktick + 1;
+          }
+        }
+
+        setDisplayedContent(content.slice(0, Math.min(slicePoint, content.length)));
       }
     }, speed);
 
@@ -54,7 +74,6 @@ function TypewriterMarkdown({ content, isLast }: { content: string; isLast: bool
   }, [content, isLast, setIsTyping]);
 
   useEffect(() => {
-
     if (!isTyping && isLast && isTypingLocal) {
       setDisplayedContent(content);
       setIsTypingLocal(false);
@@ -66,9 +85,21 @@ function TypewriterMarkdown({ content, isLast }: { content: string; isLast: bool
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          p: ({ node, ...props }) => <div className="mb-4 last:mb-0 leading-[1.6] text-zinc-300 font-medium tracking-tight" {...props} />,
-          ul: ({ node, ...props }) => <ul className="mb-6 space-y-4 list-none p-0 m-0" {...props} />,
-          ol: ({ node, ...props }) => <ol className="list-decimal ml-8 mb-6 space-y-4 text-zinc-300 marker:font-bold marker:text-zinc-500" {...props} />,
+          p: ({ node, children, ...props }) => (
+            <p className="mb-3 last:mb-0 leading-relaxed text-zinc-100 font-normal" {...props}>
+              {children}
+            </p>
+          ),
+          ul: ({ node, children, ...props }) => (
+            <ul className="mb-4 mt-2 space-y-1.5 list-none pl-1" {...props}>
+              {children}
+            </ul>
+          ),
+          ol: ({ node, children, ...props }) => (
+            <ol className="list-decimal ml-6 mb-4 mt-2 space-y-1.5 text-zinc-100" {...props}>
+              {children}
+            </ol>
+          ),
           li: ({ node, children, ...props }: any) => {
             const stripper = (content: any): any => {
               if (typeof content === 'string') {
@@ -85,65 +116,97 @@ function TypewriterMarkdown({ content, isLast }: { content: string; isLast: bool
               return content;
             };
             return (
-              <li className={`relative pl-6 leading-[1.6] group/li list-none ${isTyping ? 'shimmer-text' : ''}`} {...props}>
-                <div className="absolute left-0 top-[0.65em] w-1.5 h-1.5 rounded-full bg-zinc-700 group-hover/li:bg-blue-500 transition-all duration-300 shadow-[0_0_8px_rgba(59,130,246,0)] group-hover/li:shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <li className="relative pl-5 py-0.5 leading-relaxed group/li" {...props}>
+                <div className="absolute left-0 top-[0.7em] w-1.5 h-1.5 rounded-full bg-zinc-600 group-hover/li:bg-white transition-all duration-200" />
                 {stripper(children)}
               </li>
             );
           },
-          strong: ({ node, ...props }) => <strong className="font-bold text-white tracking-tight" {...props} />,
-          h1: ({ node, ...props }) => <h1 className="text-lg font-bold mb-4 mt-8 first:mt-0 font-space text-white uppercase tracking-tighter" {...props} />,
-          h2: ({ node, ...props }) => <h2 className="text-sm font-bold mb-3 mt-6 first:mt-0 font-space text-zinc-500 uppercase tracking-widest bg-zinc-800/20 inline-block px-2 py-0.5 rounded" {...props} />,
-          table: ({ node, ...props }) => (
-            <div className="w-full overflow-x-auto my-6 border border-zinc-800/50 rounded-xl bg-zinc-950/20 shadow-2xl">
-              <table className="w-full text-left border-collapse" {...props} />
+          strong: ({ node, ...props }) => <strong className="font-semibold text-white" {...props} />,
+          em: ({ node, ...props }) => <em className="italic text-zinc-200" {...props} />,
+          h1: ({ node, ...props }) => (
+            <h1 className="text-xl font-bold mb-4 mt-6 first:mt-0 text-white border-b border-zinc-800 pb-2" {...props} />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 className="text-lg font-semibold mb-3 mt-5 first:mt-0 text-white" {...props} />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 className="text-base font-semibold mb-2 mt-4 first:mt-0 text-zinc-100" {...props} />
+          ),
+          blockquote: ({ node, children, ...props }) => (
+            <blockquote className="border-l-3 border-white pl-4 py-2 my-4 bg-zinc-900/50 rounded-r-lg italic text-zinc-300" {...props}>
+              {children}
+            </blockquote>
+          ),
+          hr: ({ node, ...props }) => (
+            <hr className="border-zinc-800 my-6" {...props} />
+          ),
+          table: ({ node, children, ...props }) => (
+            <div className="w-full overflow-x-auto my-4 border border-zinc-800 rounded-lg">
+              <table className="w-full text-left border-collapse text-sm" {...props}>
+                {children}
+              </table>
             </div>
           ),
-          thead: ({ node, ...props }) => <thead className="bg-zinc-900/50 border-b border-zinc-800/50" {...props} />,
-          th: ({ node, ...props }) => <th className="px-5 py-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest whitespace-nowrap" {...props} />,
-          td: ({ node, ...props }) => <td className="px-5 py-3.5 text-[13px] border-b border-zinc-800/20 text-zinc-300 align-top font-medium leading-relaxed" {...props} />,
-          tr: ({ node, ...props }) => <tr className="border-b border-zinc-800/10 last:border-0 hover:bg-white/2 transition-colors" {...props} />,
+          thead: ({ node, ...props }) => (
+            <thead className="bg-zinc-900 border-b border-zinc-800" {...props} />
+          ),
+          th: ({ node, ...props }) => (
+            <th className="px-4 py-2.5 text-xs font-semibold text-zinc-400 uppercase tracking-wide whitespace-nowrap border-r border-zinc-800 last:border-0" {...props} />
+          ),
+          td: ({ node, ...props }) => (
+            <td className="px-4 py-2.5 border-b border-zinc-800/50 text-zinc-200 border-r last:border-0 align-top" {...props} />
+          ),
+          tr: ({ node, ...props }) => (
+            <tr className="border-b border-zinc-800/30 last:border-0 hover:bg-zinc-900/30 transition-colors" {...props} />
+          ),
           code: ({ node, inline, className, children, ...props }: any) => {
             const match = /language-(\w+)/.exec(className || '');
             const rawContent = String(children);
             const content = rawContent.trim();
 
-            // Only render multi-line block if it actually has content
-            const isMultiLine = (rawContent.includes('\n') || !inline) && content.length > 0;
+            const hasLanguage = match !== null;
+            const isMultiLineCode = rawContent.includes('\n') && content.length > 0;
 
-            if (isMultiLine) {
+            if (hasLanguage || isMultiLineCode) {
               return (
-                <div className="rounded-xl overflow-hidden my-6 border border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] group/code relative animate-in fade-in zoom-in-95 duration-300">
-                  <div className="bg-zinc-900/60 px-5 py-3 flex items-center justify-between border-b border-white/5">
+                <div className="rounded-lg overflow-hidden my-4 border border-zinc-800 bg-zinc-950 shadow-lg group/code relative">
+                  <div className="bg-zinc-900 px-4 py-2.5 flex items-center justify-between border-b border-zinc-800">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 opacity-50">
-                        <div className="w-2 h-2 rounded-full bg-red-500/50" />
-                        <div className="w-2 h-2 rounded-full bg-amber-500/50" />
-                        <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
                       </div>
                       {match && (
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 ml-2">{match[1]}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 ml-2">{match[1]}</span>
                       )}
                     </div>
                     <div className="opacity-0 group-hover/code:opacity-100 transition-opacity">
-                      <button className="text-[10px] uppercase tracking-widest font-bold text-zinc-500 hover:text-white transition-colors" onClick={() => navigator.clipboard.writeText(content)}>Copy</button>
+                      <button
+                        className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 hover:text-white transition-colors"
+                        onClick={() => navigator.clipboard.writeText(content)}
+                      >
+                        Copy
+                      </button>
                     </div>
                   </div>
-                  <div className="p-0 selection:bg-white selection:text-black">
+                  <div className="p-0 overflow-x-auto">
                     <SyntaxHighlighter
                       language={match ? match[1] : 'text'}
-                      style={vscDarkPlus}
                       customStyle={{
                         margin: 0,
-                        padding: content.includes('\n') ? '24px' : '16px 24px',
+                        padding: '16px',
                         background: 'transparent',
                         fontSize: '13px',
-                        lineHeight: '1.7',
-                        fontFamily: 'var(--font-mono), monospace',
+                        lineHeight: '1.6',
+                        fontFamily: 'inherit',
+                        color: '#e4e4e7',
                       }}
                       codeTagProps={{
                         style: {
                           fontFamily: 'inherit',
+                          color: '#e4e4e7',
                         }
                       }}
                     >
@@ -155,12 +218,24 @@ function TypewriterMarkdown({ content, isLast }: { content: string; isLast: bool
             }
 
             return (
-              <code className="bg-white/10 text-white px-1.5 py-0.5 rounded text-[13px] font-mono border border-white/10 shadow-sm font-semibold selection:bg-white selection:text-black inline-block align-middle my-0.5" {...props}>
+              <code className="bg-zinc-800/80 text-zinc-100 px-1.5 py-0.5 rounded text-sm font-mono border border-zinc-700/50 inline align-baseline" {...props}>
                 {content || children}
               </code>
             );
           },
-          a: ({ node, ...props }) => <a className="text-blue-400 hover:text-blue-300 font-bold underline underline-offset-4 decoration-blue-400/30 hover:decoration-blue-300 transition-all" {...props} />,
+          pre: ({ node, children, ...props }) => (
+            <pre className="mb-4 mt-2 p-0 bg-transparent rounded-lg overflow-hidden" {...props}>
+              {children}
+            </pre>
+          ),
+          a: ({ node, ...props }) => (
+            <a
+              className="text-white hover:text-zinc-300 font-medium underline underline-offset-4 decoration-white/40 hover:decoration-zinc-300 transition-all wrap-break-word"
+              target="_blank"
+              rel="noopener noreferrer"
+              {...props}
+            />
+          ),
         }}
       >
         {displayedContent}
@@ -185,6 +260,24 @@ export default function DashboardPage() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
+  useEffect(() => {
+    const hasSeenWelcome = sessionStorage.getItem('mediasoft_welcome_seen');
+    if (!hasSeenWelcome) {
+      setShowWelcomeModal(true);
+      sessionStorage.setItem('mediasoft_welcome_seen', 'true');
+    }
+  }, []);
+
+  const sessionFilteredCountRef = useRef(0);
+  const lastIdRef = useRef<string | null>(null);
+
+  const filteredMessages = currentConversation?.messages.filter(m => m.role !== 'system') || [];
+
+  if (currentConversation?._id !== lastIdRef.current) {
+    sessionFilteredCountRef.current = filteredMessages.length || 0;
+    lastIdRef.current = currentConversation?._id || null;
+  }
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -203,7 +296,6 @@ export default function DashboardPage() {
     if (!scrollContainerRef.current) return;
 
     const observer = new ResizeObserver(() => {
-      // Auto-scroll if we are near the bottom
       const container = scrollContainerRef.current;
       if (container) {
         const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
@@ -213,7 +305,6 @@ export default function DashboardPage() {
       }
     });
 
-    // Also observe the children of the message list specifically
     const messageList = scrollContainerRef.current.querySelector('.space-y-10');
     if (messageList) observer.observe(messageList);
 
@@ -234,36 +325,14 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-black text-white overflow-hidden font-outfit antialiased">
-      <div className="px-4 lg:px-6 py-3 border-b border-zinc-800/10 bg-black/90 z-20 shrink-0">
-        <div className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-lg">
-              <Bot className={`w-5 h-5 text-black ${isSending ? 'animate-spin' : ''}`} />
-            </div>
-            <div>
-              <h2 className="font-bold text-base text-white font-space tracking-tight leading-none uppercase">
-                {currentConversation ? currentConversation.title : 'New Session'}
-              </h2>
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <p className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold">Secure AI Pipeline Online</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={startNewChat}
-              className="flex items-center gap-2 text-zinc-500 hover:text-white border-zinc-800/50 hover:bg-zinc-800/50 rounded-lg px-3 h-8 transition-all shrink-0 font-bold text-[10px] uppercase tracking-widest"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">New Chat</span>
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col h-full bg-transparent text-zinc-100 overflow-hidden font-outfit antialiased">
+      <DashboardHeader
+        title={currentConversation ? currentConversation.title : 'MediaSoft AI'}
+        subtitle="Secure AI Pipeline Online"
+        isBotWorking={isSending}
+        onAction={startNewChat}
+        actionText="New Chat"
+      />
 
       <div className="flex-1 relative overflow-hidden flex flex-col">
         <div
@@ -280,14 +349,16 @@ export default function DashboardPage() {
             ) : !currentConversation ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-6 animate-in fade-in duration-700">
                 <div className="space-y-4 mb-8">
-                  <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mx-auto shadow-xl relative">
-                    <Bot size={32} className="text-black" />
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-black" />
+                  <div className="w-20 h-20 rounded-3xl bg-white flex items-center justify-center mx-auto shadow-2xl relative mb-8">
+                    <Bot size={44} className="text-black" />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border-4 border-black" />
                   </div>
-                  <div className="space-y-1.5 px-4">
-                    <h2 className="text-3xl lg:text-4xl font-bold text-white font-space tracking-tight leading-none uppercase">How can I help you?</h2>
-                    <p className="text-zinc-500 max-w-sm mx-auto text-xs leading-relaxed font-medium mt-3">
-                      Secure AI Assistant Ready. Access your retail data, cloud ecosystems, and enterprise architecture.
+                  <div className="space-y-4 px-4">
+                    <h2 className="text-4xl lg:text-5xl font-bold text-white font-space tracking-tight leading-none uppercase">
+                      How can I <span className="gradient-text">Help you?</span>
+                    </h2>
+                    <p className="text-zinc-500 max-w-sm mx-auto text-xs lg:text-sm leading-relaxed font-medium mt-6 uppercase tracking-widest opacity-80">
+                      Secure AI Assistant Ready
                     </p>
                   </div>
                 </div>
@@ -320,7 +391,6 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-10 w-full pb-10">
                 {(() => {
-                  const filteredMessages = currentConversation.messages.filter(m => m.role !== 'system');
                   return filteredMessages.map((msg, idx) => (
                     <div
                       key={`${currentConversation._id}-${idx}`}
@@ -338,11 +408,13 @@ export default function DashboardPage() {
 
                         <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                           <div className={`transition-all relative overflow-hidden ${msg.role === 'user'
-                              ? 'px-5 py-2.5 rounded-2xl text-[14px] font-semibold bg-white text-black rounded-br-none shadow-[0_10px_40px_rgba(255,255,255,0.1)] border border-white'
-                              : 'px-6 py-4 rounded-2xl text-[16px] leading-relaxed bg-zinc-900 text-white rounded-bl-none border border-zinc-800 shadow-[0_10px_30px_rgba(0,0,0,0.3)] font-mixed'
+                              ? 'px-6 py-3.5 rounded-2xl font-bold text-[15px] bg-white text-black rounded-br-none shadow-2xl border border-white'
+                              : 'px-8 py-6 rounded-2xl text-[16px] leading-relaxed bg-white/5 backdrop-blur-md text-white rounded-bl-none border border-white/10 shadow-2xl font-mixed'
                             }`}>
-                            {msg.role !== 'user' && (
-                              <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
+                            {msg.role !== 'user' ? (
+                              <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
+                            ) : (
+                              <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-black/5 to-transparent pointer-events-none" />
                             )}
                             {msg.role === 'user' ? (
                               msg.content
@@ -350,10 +422,13 @@ export default function DashboardPage() {
                               <div className={`flex flex-col gap-1 w-full max-w-none ${idx === filteredMessages.length - 1 ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`}>
                                 {(() => {
                                   const isLast = idx === filteredMessages.length - 1;
+                                  const isNew = idx >= sessionFilteredCountRef.current;
+                                  
                                   return (
                                     <TypewriterMarkdown
                                       content={msg.content}
                                       isLast={isLast}
+                                      isNew={isNew}
                                     />
                                   );
                                 })()}
@@ -375,13 +450,13 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex flex-col items-start font-hind">
-                        <div className={`px-5 py-3 rounded-2xl bg-white/5 text-zinc-400 rounded-bl-none border border-zinc-800 shadow-[0_10px_30px_rgba(0,0,0,0.3)] flex items-center gap-4`}>
+                        <div className={`px-6 py-4 rounded-2xl bg-white/5 backdrop-blur-md text-zinc-400 rounded-bl-none border border-white/10 shadow-2xl flex items-center gap-4`}>
                           <div className="flex gap-2 items-center">
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 animate-bounce [animation-delay:-0.3s]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 animate-bounce [animation-delay:-0.15s]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 animate-bounce" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.15s]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" />
                           </div>
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Thinking...</span>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white animate-pulse">Analyzing Session...</span>
                         </div>
                       </div>
                     </div>
@@ -413,10 +488,10 @@ export default function DashboardPage() {
           <div className="w-full max-w-4xl mx-auto relative flex flex-col pt-6">
             <form
               onSubmit={handleSendMessage}
-              className="relative group flex items-center gap-3"
+              className="relative group flex items-center gap-4"
             >
-              <div className="flex-1 bg-zinc-950 border border-zinc-800/80 rounded-xl focus-within:border-zinc-700 focus-within:bg-black transition-all shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/5 to-transparent" />
+              <div className="flex-1 bg-black/40 backdrop-blur-xl border border-white/5 rounded-2xl focus-within:border-white/10 transition-all shadow-2xl relative overflow-hidden p-1">
+                <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
 
                 <textarea
                   rows={1}
@@ -477,52 +552,25 @@ export default function DashboardPage() {
       </AnimatePresence>
 
 
-      <AnimatePresence>
-        {showWelcomeModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-zinc-950 w-full max-w-md rounded-2xl p-8 border border-zinc-800 relative overflow-hidden"
-            >
-              <div className="flex justify-center mb-6 mt-2">
-                <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center">
-                  <Bot size={32} className="text-black" />
-                </div>
-              </div>
-
-              <h2 className="text-2xl font-bold text-center text-white mb-2 font-space uppercase">Welcome to Mediasoft AI</h2>
-              <p className="text-zinc-400 text-center text-sm mb-8 leading-relaxed">
-                Your AI-powered assistant is ready. Access real-time intelligence, manage your ecosystems, and streamline your workflow with enterprise-grade precision.
-              </p>
-
-              <div className="flex gap-3 w-full justify-center">
-                <Button
-                  onClick={() => setShowWelcomeModal(false)}
-                  variant="outline"
-                  className="flex-1 max-w-[160px] bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 h-11 rounded-xl text-zinc-300 font-medium flex items-center justify-center gap-2 transition-all text-sm uppercase"
-                >
-                  <Settings className="w-4 h-4" />
-                  Configure
-                </Button>
-                <Button
-                  onClick={() => setShowWelcomeModal(false)}
-                  className="flex-1 max-w-[190px] bg-white h-11 rounded-xl text-black font-medium flex items-center justify-center gap-2 hover:bg-zinc-200 transition-all text-sm uppercase"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  Access Dashboard
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ConfirmationModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+        onConfirm={() => setShowWelcomeModal(false)}
+        title="Secure Intelligence"
+        description="Your high-fidelity AI pipeline is currently active and ready for archival synchronization."
+        confirmText="Access Dashboard"
+        abortText="Configure"
+        confirmIcon={LayoutDashboard}
+        abortIcon={Settings}
+        icon={Bot}
+        footerText="Core Ecosystem Online"
+      >
+        <div className="mb-6 flex items-center justify-center gap-2">
+          <div className="w-1 h-1 rounded-full bg-white/20 animate-pulse" />
+          <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-[0.3em]">Module 01 Active</span>
+          <div className="w-1 h-1 rounded-full bg-white/20 animate-pulse" style={{ animationDelay: '0.5s' }} />
+        </div>
+      </ConfirmationModal>
     </div>
   );
 }

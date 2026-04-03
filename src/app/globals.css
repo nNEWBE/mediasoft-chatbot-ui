@@ -8,8 +8,8 @@
   --font-space: var(--font-space);
   --font-hind: var(--font-hind);
 
-  --color-brand-primary: #fafafa;
-  --color-brand-secondary: #3b82f6;
+  --color-brand-primary: #ffffff;
+  --color-brand-secondary: #71717a;
   --color-surface: #09090b;
 
   --color-background: var(--background);
@@ -89,8 +89,8 @@
   --popover: #09090b;
   --popover-foreground: #fafafa;
 
-  --primary: #3b82f6;
-  --primary-foreground: #09090b;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
 
   --secondary: #27272a;
   --secondary-foreground: #fafafa;
@@ -101,19 +101,18 @@
   --accent: #27272a;
   --accent-foreground: #fafafa;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
+  --destructive: #52525b;
+  --destructive-foreground: #ffffff;
 
   --border: #27272a;
   --input: #27272a;
-  --ring: #3b82f6;
+  --ring: #ffffff;
 
   --radius: 0.5rem;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
     box-sizing: border-box;
     padding: 0;
     margin: 0;
@@ -137,12 +136,12 @@
     color: #000000;
   }
 
-  /* Code Syntax Theme (Minimalist Professional) */
-  .code-keyword { color: #3b82f6; font-weight: 600; }
-  .code-string { color: #10b981; }
+  /* Code Syntax Theme (Monochromatic Professional) */
+  .code-keyword { color: #ffffff; font-weight: 700; }
+  .code-string { color: #a1a1aa; }
   .code-comment { color: #52525b; font-style: italic; }
-  .code-function { color: #8b5cf6; }
-  .code-number { color: #f59e0b; }
+  .code-function { color: #d4d4d8; font-weight: 600; }
+  .code-number { color: #71717a; }
 }
 
 .glass-effect {
