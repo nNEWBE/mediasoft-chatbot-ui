@@ -17,68 +17,42 @@ import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-const TypewriterMarkdown = React.memo(function TypewriterMarkdown({ content, isLast, isNew }: { content: string; isLast: boolean; isNew: boolean }) {
-  const [displayedContent, setDisplayedContent] = useState(isNew ? '' : content);
-  const [isTypingLocal, setIsTypingLocal] = useState(isNew);
-  const { setIsTyping, isTyping } = useChatStore();
+const TypewriterMarkdown = React.memo(function TypewriterMarkdown({ content, isLast }: { content: string; isLast: boolean }) {
+  const [displayedContent, setDisplayedContent] = useState(content);
+  const { isSending } = useChatStore();
+  const prevContentRef = useRef(content);
 
+  // When content changes during streaming, update immediately
   useEffect(() => {
-    if (!isNew) {
-      setDisplayedContent(content);
-      setIsTypingLocal(false);
-      return;
-    }
-
-    let index = 0;
-    const speed = 10;
-
-    setDisplayedContent('');
-    setIsTypingLocal(true);
-    setIsTyping(true);
-
-    const interval = setInterval(() => {
-      index += 3;
-      if (index >= content.length) {
+    if (content !== prevContentRef.current) {
+      // During streaming (isSending), show content immediately
+      if (isSending) {
         setDisplayedContent(content);
-        setIsTypingLocal(false);
-        setIsTyping(false);
-        clearInterval(interval);
       } else {
-        let slicePoint = index;
-        const currentSlice = content.slice(0, index);
-        
-        const lastOpenBracket = currentSlice.lastIndexOf('[');
-        const lastCloseBracket = currentSlice.lastIndexOf(']');
-        const lastBacktick = currentSlice.lastIndexOf('`');
-        
-        if (lastOpenBracket > lastCloseBracket && lastOpenBracket > index - 20) {
-          const nextCloseBracket = content.indexOf(']', index);
-          if (nextCloseBracket !== -1 && nextCloseBracket < content.length) {
-            slicePoint = nextCloseBracket + 1;
-          }
-        } else if (lastBacktick % 2 === 1) {
-          const nextBacktick = content.indexOf('`', index);
-          if (nextBacktick !== -1) {
-            slicePoint = nextBacktick + 1;
-          }
+        // After streaming complete, use typewriter for the first render
+        if (prevContentRef.current === '') {
+          let index = 0;
+          const speed = 5;
+          setDisplayedContent('');
+
+          const interval = setInterval(() => {
+            index += 5;
+            if (index >= content.length) {
+              setDisplayedContent(content);
+              clearInterval(interval);
+            } else {
+              setDisplayedContent(content.slice(0, Math.min(index, content.length)));
+            }
+          }, speed);
+
+          return () => clearInterval(interval);
+        } else {
+          setDisplayedContent(content);
         }
-
-        setDisplayedContent(content.slice(0, Math.min(slicePoint, content.length)));
       }
-    }, speed);
-
-    return () => {
-      clearInterval(interval);
-      setIsTyping(false);
-    };
-  }, [content, isLast, setIsTyping]);
-
-  useEffect(() => {
-    if (!isTyping && isLast && isTypingLocal) {
-      setDisplayedContent(content);
-      setIsTypingLocal(false);
+      prevContentRef.current = content;
     }
-  }, [isTyping, isLast, isTypingLocal, content]);
+  }, [content, isSending]);
 
   return (
     <div className="relative group/markdown">
@@ -254,7 +228,8 @@ export default function DashboardPage() {
     startNewChat,
     sendMessage,
     stopGeneration,
-    isTyping
+    isTyping,
+    streamingMessage,
   } = useChatStore();
 
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -268,15 +243,7 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const sessionFilteredCountRef = useRef(0);
-  const lastIdRef = useRef<string | null>(null);
-
   const filteredMessages = currentConversation?.messages.filter(m => m.role !== 'system') || [];
-
-  if (currentConversation?._id !== lastIdRef.current) {
-    sessionFilteredCountRef.current = filteredMessages.length || 0;
-    lastIdRef.current = currentConversation?._id || null;
-  }
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -318,7 +285,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentConversation?.messages]);
+  }, [currentConversation?.messages, streamingMessage]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -398,13 +365,12 @@ export default function DashboardPage() {
                 {(() => {
                   return filteredMessages.map((msg, idx) => {
                     const isLast = idx === filteredMessages.length - 1;
-                    const isNew = idx >= sessionFilteredCountRef.current;
                     const msgId = `${currentConversation._id}-${idx}`;
 
                     return (
                       <div
                         key={msgId}
-                        className={`flex w-full animate-in fade-in slide-in-from-bottom-3 duration-500 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div className={`flex gap-4 max-w-[92%] lg:max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                           <div className="shrink-0 flex flex-col justify-end mb-1">
@@ -429,11 +395,10 @@ export default function DashboardPage() {
                               {msg.role === 'user' ? (
                                 msg.content
                               ) : (
-                                <div className={`flex flex-col gap-1 w-full max-w-none ${isLast ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`}>
+                                <div className={`flex flex-col gap-1 w-full max-w-none ${isLast ? '' : ''}`}>
                                   <TypewriterMarkdown
                                     content={msg.content}
                                     isLast={isLast}
-                                    isNew={isNew}
                                   />
                                 </div>
                               )}
@@ -446,23 +411,35 @@ export default function DashboardPage() {
                 })()}
 
                 {isSending && (
-                  <div className="flex w-full animate-in fade-in slide-in-from-bottom-3 duration-500 justify-start">
+                  <div className="flex w-full justify-start">
                     <div className="flex gap-4 max-w-[92%] lg:max-w-[85%] flex-row">
                       <div className="shrink-0 flex flex-col justify-end mb-1">
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center border transition-all shadow-md bg-zinc-900 border-zinc-800">
                           <Bot size={14} className="text-zinc-400 animate-pulse" />
                         </div>
                       </div>
-                      <div className="flex flex-col items-start font-hind w-full">
-                        <div className={`px-4 lg:px-6 py-3 lg:py-4 rounded-2xl bg-white/5 backdrop-blur-md text-zinc-400 rounded-bl-none border border-white/10 shadow-2xl flex items-center gap-3 lg:gap-4`}>
-                          <div className="flex gap-2 items-center">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.15s]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" />
+                      {!streamingMessage ? (
+                        <div className="flex flex-col items-start font-hind w-full">
+                          <div className={`px-4 lg:px-6 py-3 lg:py-4 rounded-2xl bg-white/5 backdrop-blur-md text-zinc-400 rounded-bl-none border border-white/10 shadow-2xl flex items-center gap-3 lg:gap-4`}>
+                            <div className="flex gap-2 items-center">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.15s]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white animate-pulse">Analyzing Session...</span>
                           </div>
-                          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white animate-pulse">Analyzing Session...</span>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex flex-col w-full items-start">
+                          <div className="px-5 lg:px-8 py-4 lg:py-6 rounded-2xl text-[14px] lg:text-[16px] leading-relaxed bg-white/10 text-white rounded-bl-none border border-white/10 shadow-2xl font-mixed w-full">
+                            <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
+                            <TypewriterMarkdown
+                              content={streamingMessage}
+                              isLast={true}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
