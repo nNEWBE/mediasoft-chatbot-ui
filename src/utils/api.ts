@@ -7,7 +7,7 @@ interface CustomRequestInit extends RequestInit {
 
 async function request(endpoint: string, options: CustomRequestInit = {}): Promise<any> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  
+
   let url = `${BASE_URL}${endpoint}`;
   if (options.params) {
     const searchParams = new URLSearchParams();
@@ -51,21 +51,92 @@ async function request(endpoint: string, options: CustomRequestInit = {}): Promi
   return { data };
 }
 
+async function streamRequest(
+  endpoint: string,
+  body?: any,
+  onChunk?: (chunk: string) => void,
+  onComplete?: (id?: string) => void,
+  onError?: (error: Error) => void
+): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+
+  const url = `${BASE_URL}${endpoint}`;
+
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
+
+    let accumulatedChunks = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      accumulatedChunks += chunk;
+
+      if (onChunk) {
+        onChunk(chunk);
+      }
+    }
+
+    const conversationId = response.headers.get('X-Conversation-Id');
+
+    if (onComplete) {
+      onComplete(conversationId || undefined);
+    }
+  } catch (error) {
+    if (onError) {
+      onError(error as Error);
+    } else {
+      console.error('Stream request failed:', error);
+    }
+  }
+}
+
 const api = {
-  get: (endpoint: string, options?: CustomRequestInit) => 
+  get: (endpoint: string, options?: CustomRequestInit) =>
     request(endpoint, { ...options, method: 'GET' }),
-  
-  post: (endpoint: string, body?: any, options?: CustomRequestInit) => 
+
+  post: (endpoint: string, body?: any, options?: CustomRequestInit) =>
     request(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
-  
-  put: (endpoint: string, body?: any, options?: CustomRequestInit) => 
+
+  put: (endpoint: string, body?: any, options?: CustomRequestInit) =>
     request(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
-  
-  patch: (endpoint: string, body?: any, options?: CustomRequestInit) => 
+
+  patch: (endpoint: string, body?: any, options?: CustomRequestInit) =>
     request(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
-  
-  delete: (endpoint: string, options?: CustomRequestInit) => 
+
+  delete: (endpoint: string, options?: CustomRequestInit) =>
     request(endpoint, { ...options, method: 'DELETE' }),
+
+  stream: (
+    endpoint: string,
+    body?: any,
+    onChunk?: (chunk: string) => void,
+    onComplete?: (id?: string) => void,
+    onError?: (error: Error) => void
+  ) => streamRequest(endpoint, body, onChunk, onComplete, onError),
 };
 
 export default api;
