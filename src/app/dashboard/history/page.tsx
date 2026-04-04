@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   History, MessageSquare, 
@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/DashboardHeader';
-
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 interface Message {
@@ -25,6 +24,80 @@ interface Conversation {
   updatedAt: string;
   createdAt: string;
 }
+
+const HistoryItem = memo(({ 
+  conv, 
+  onOpen, 
+  onDelete,
+  formatDate,
+  getPreviewText 
+}: { 
+  conv: Conversation; 
+  onOpen: (conv: Conversation) => void;
+  onDelete: (conv: Conversation) => void;
+  formatDate: (d: string) => string;
+  getPreviewText: (c: Conversation) => string;
+}) => (
+  <div className="group relative">
+    <div className="absolute -inset-px bg-linear-to-r from-white/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+    
+    <div className="relative z-10 bg-zinc-900/60 rounded-2xl border border-white/5 p-4 lg:p-5 flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-6 hover:bg-zinc-800/80 hover:border-white/10 transition-all duration-200 transform-gpu">
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
+          <MessageSquare size={18} className="text-zinc-400 group-hover:text-white transition-colors" />
+        </div>
+
+        <div className="flex-1 min-w-0 pr-2">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h3 className="font-bold text-white text-sm lg:text-[15px] font-space uppercase tracking-wide truncate max-w-[200px]">
+              {conv.title || 'Untitled Session'}
+            </h3>
+            <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+              {conv.messages.length} NODES
+            </span>
+          </div>
+          <p className="text-[12px] lg:text-[13px] text-zinc-500 truncate font-light leading-relaxed">
+            {getPreviewText(conv)}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between sm:justify-end gap-4 lg:gap-10 pt-4 sm:pt-0 border-t sm:border-t-0 border-white/5">
+        <div className="flex flex-col items-start sm:items-end shrink-0">
+          <span className="text-[8px] lg:text-[9px] text-zinc-600 uppercase tracking-[0.2em] font-bold mb-0.5 lg:mb-1">Last Sync</span>
+          <div className="flex items-center gap-1.5 text-zinc-400">
+            <Clock size={9} className="text-zinc-600" />
+            <span className="text-[10px] lg:text-[11px] tabular-nums font-medium">{formatDate(conv.updatedAt)}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => onOpen(conv)}
+            variant="ghost"
+            className="bg-white hover:bg-zinc-200 text-black h-9 lg:h-11 px-4 lg:px-6 rounded-xl flex items-center gap-2 group/btn transition-all font-bold text-[10px] lg:text-xs uppercase tracking-tight"
+          >
+            Access
+            <ArrowRight size={13} className="-rotate-45 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform duration-300" />
+          </Button>
+
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(conv);
+            }}
+            variant="ghost"
+            className="w-9 h-9 lg:w-11 lg:h-11 p-0 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 text-zinc-600 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all shadow-sm active:scale-90"
+          >
+            <Trash2 size={15} />
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+));
+
+HistoryItem.displayName = 'HistoryItem';
 
 export default function ChatHistoryPage() {
   const router = useRouter();
@@ -66,7 +139,6 @@ export default function ChatHistoryPage() {
   }, [conversations, isLoading, currentPage, searchTerm]);
 
   const totalPages = Math.ceil(totalConversations / pageSize);
-  const paginatedHistory = conversations; 
 
   const handleOpenChat = (conv: Conversation) => {
     selectConversation(conv);
@@ -102,12 +174,12 @@ export default function ChatHistoryPage() {
         actionText="New Session"
       />
 
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-white/3 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-white/2 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-white/2 blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-white/1 blur-[100px]" />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6 scrollbar-hide relative z-10">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6 scrollbar-hide relative z-10 transform-gpu will-change-scroll">
         <div className="max-w-7xl mx-auto pb-20">
           <div className="relative z-10 space-y-8">
             <div className="flex items-center justify-between pb-4 border-b border-white/5">
@@ -132,11 +204,11 @@ export default function ChatHistoryPage() {
                      <div className="absolute inset-0 border-2 border-white/5 rounded-full" />
                      <div className="absolute inset-0 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
                   </div>
-                  <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-medium animate-pulse">Synchronizing Logs...</p>
+                  <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-medium opacity-50">Synchronizing Logs...</p>
                 </div>
               </div>
-            ) : paginatedHistory.length === 0 ? (
-              <div className="bg-white/2 backdrop-blur-sm border border-white/5 rounded-2xl text-center py-24 shadow-2xl">
+            ) : conversations.length === 0 ? (
+              <div className="bg-zinc-900/40 border border-white/5 rounded-2xl text-center py-24 shadow-2xl">
                 <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
                   <History className="w-8 h-8 text-zinc-600" />
                 </div>
@@ -158,70 +230,15 @@ export default function ChatHistoryPage() {
             ) : (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-4">
-                  {paginatedHistory.map((conv) => (
-                    <motion.div
+                  {conversations.map((conv) => (
+                    <HistoryItem
                       key={conv._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ x: 4 }}
-                      className="group relative"
-                    >
-                      <div className="absolute -inset-px bg-linear-to-r from-white/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                      
-                      <div className="relative z-10 bg-zinc-950/40 backdrop-blur-md rounded-2xl border border-white/5 p-4 lg:p-5 flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-6 hover:bg-zinc-900/40 hover:border-white/10 transition-all duration-300">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                          <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
-                            <MessageSquare size={18} className="text-zinc-400 group-hover:text-white transition-colors" />
-                          </div>
-
-                          <div className="flex-1 min-w-0 pr-2">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <h3 className="font-bold text-white text-sm lg:text-[15px] font-space uppercase tracking-wide truncate max-w-[200px]">
-                                {conv.title || 'Untitled Session'}
-                              </h3>
-                              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
-                                {conv.messages.length} NODES
-                              </span>
-                            </div>
-                            <p className="text-[12px] lg:text-[13px] text-zinc-500 truncate font-light leading-relaxed">
-                              {getPreviewText(conv)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-4 lg:gap-10 pt-4 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                          <div className="flex flex-col items-start sm:items-end shrink-0">
-                            <span className="text-[8px] lg:text-[9px] text-zinc-600 uppercase tracking-[0.2em] font-bold mb-0.5 lg:mb-1">Last Sync</span>
-                            <div className="flex items-center gap-1.5 text-zinc-400">
-                              <Clock size={9} className="text-zinc-600" />
-                              <span className="text-[10px] lg:text-[11px] tabular-nums font-medium">{formatDate(conv.updatedAt)}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Button
-                              onClick={() => handleOpenChat(conv)}
-                              variant="ghost"
-                              className="bg-white hover:bg-zinc-200 text-black h-9 lg:h-11 px-4 lg:px-6 rounded-xl flex items-center gap-2 group/btn transition-all font-bold text-[10px] lg:text-xs uppercase tracking-tight"
-                            >
-                              Access
-                              <ArrowRight size={13} className="-rotate-45 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform duration-300" />
-                            </Button>
-
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConversationToDelete(conv);
-                              }}
-                              variant="ghost"
-                              className="w-9 h-9 lg:w-11 lg:h-11 p-0 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 text-zinc-600 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all shadow-sm active:scale-90"
-                            >
-                              <Trash2 size={15} />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
+                      conv={conv}
+                      onOpen={handleOpenChat}
+                      onDelete={setConversationToDelete}
+                      formatDate={formatDate}
+                      getPreviewText={getPreviewText}
+                    />
                   ))}
                 </div>
 
@@ -229,7 +246,7 @@ export default function ChatHistoryPage() {
                   <div className="relative">
                     <button
                       onClick={() => setIsLimitOpen(!isLimitOpen)}
-                      className="group/limit relative flex items-center gap-3 bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-xl px-3 py-1.5 hover:border-white/20 hover:bg-zinc-900 transition-all active:scale-95"
+                      className="group/limit relative flex items-center gap-3 bg-zinc-900/60 border border-white/5 rounded-xl px-3 py-1.5 hover:border-white/20 hover:bg-zinc-900 transition-all active:scale-95"
                     >
                       <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Limit</span>
                       <span className="text-[12px] font-bold text-white tabular-nums border-l border-white/10 pl-3">
@@ -237,7 +254,7 @@ export default function ChatHistoryPage() {
                       </span>
                       <ChevronDown 
                         size={12} 
-                        className={`text-zinc-600 transition-transform duration-500 group-hover/limit:text-white ${isLimitOpen ? 'rotate-180' : ''}`} 
+                        className={`text-zinc-600 transition-transform duration-300 group-hover/limit:text-white ${isLimitOpen ? 'rotate-180' : ''}`} 
                       />
                     </button>
 
@@ -246,10 +263,10 @@ export default function ChatHistoryPage() {
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setIsLimitOpen(false)} />
                           <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: -6, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute bottom-full left-0 w-28 mb-1.5 z-50 overflow-hidden bg-zinc-950/95 backdrop-blur-3xl border border-white/10 rounded-xl p-1 shadow-2xl"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="absolute bottom-full left-0 w-28 mb-1.5 z-50 overflow-hidden bg-zinc-950 border border-white/10 rounded-xl p-1 shadow-2xl"
                           >
                             {[5, 10, 20, 50].map((size) => (
                               <button
@@ -275,7 +292,7 @@ export default function ChatHistoryPage() {
                   </div>
 
                   {totalPages > 1 && (
-                    <div className="flex items-center gap-1 p-0.5 bg-white/5 border border-white/5 rounded-xl backdrop-blur-xl">
+                    <div className="flex items-center gap-1 p-0.5 bg-white/5 border border-white/5 rounded-xl">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -289,8 +306,6 @@ export default function ChatHistoryPage() {
                       <div className="flex items-center px-1">
                         {(() => {
                           const pages = [];
-                          const maxVisible = 5;
-                          
                           if (totalPages <= 7) {
                             for (let i = 1; i <= totalPages; i++) pages.push(i);
                           } else {
@@ -313,29 +328,25 @@ export default function ChatHistoryPage() {
                             }
                           }
 
-                          return (
-                            <>
-                              {pages.map((page, idx) => (
-                                page === '...' ? (
-                                  <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-zinc-700 text-[10px] font-bold">
-                                    ...
-                                  </span>
-                                ) : (
-                                  <button
-                                    key={page}
-                                    onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                                    className={`w-8 h-8 rounded-lg text-[11px] font-bold transition-all duration-300 ${
-                                      currentPage === page 
-                                        ? 'bg-white text-black shadow-lg shadow-white/10' 
-                                        : 'text-zinc-500 hover:text-white hover:bg-white/5'
-                                    }`}
-                                  >
-                                    {page.toString().padStart(2, '0')}
-                                  </button>
-                                )
-                              ))}
-                            </>
-                          );
+                          return pages.map((page, idx) => (
+                            page === '...' ? (
+                              <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-zinc-700 text-[10px] font-bold">
+                                ...
+                              </span>
+                            ) : (
+                              <button
+                                key={page}
+                                onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                                className={`w-8 h-8 rounded-lg text-[11px] font-bold transition-all ${
+                                  currentPage === page 
+                                    ? 'bg-white text-black' 
+                                    : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                                }`}
+                              >
+                                {typeof page === 'number' ? page.toString().padStart(2, '0') : page}
+                              </button>
+                            )
+                          ));
                         })()}
                       </div>
 

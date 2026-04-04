@@ -33,7 +33,7 @@ export function DashboardHeader({
   searchPlaceholder = "Search..."
 }: DashboardHeaderProps) {
   return (
-    <div className="relative z-20 px-4 lg:px-6 py-3 lg:py-4 border-b border-white/5 bg-black/20 backdrop-blur-md shrink-0">
+    <div className="relative z-20 px-4 lg:px-6 py-3 lg:py-4 border-b border-white/5 bg-[#080808] shrink-0">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 lg:gap-4 min-w-0">
           <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-white flex items-center justify-center shrink-0 shadow-2xl">

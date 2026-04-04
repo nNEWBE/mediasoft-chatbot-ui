@@ -420,7 +420,7 @@ export default function DashboardPage() {
                       </div>
                       {!streamingMessage ? (
                         <div className="flex flex-col items-start font-hind w-full">
-                          <div className={`px-4 lg:px-6 py-3 lg:py-4 rounded-2xl bg-white/5 backdrop-blur-md text-zinc-400 rounded-bl-none border border-white/10 shadow-2xl flex items-center gap-3 lg:gap-4`}>
+                          <div className={`px-4 lg:px-6 py-3 lg:py-4 rounded-2xl bg-[#080808] text-zinc-400 rounded-bl-none border border-white/10 shadow-2xl flex items-center gap-3 lg:gap-4`}>
                             <div className="flex gap-2 items-center">
                               <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
                               <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.15s]" />
@@ -471,7 +471,7 @@ export default function DashboardPage() {
               onSubmit={handleSendMessage}
               className="relative group flex items-center gap-4"
             >
-              <div className="flex-1 bg-black/40 backdrop-blur-xl border border-white/5 rounded-2xl focus-within:border-white/10 transition-all shadow-2xl relative overflow-hidden p-1">
+              <div className="flex-1 bg-[#080808] border border-white/5 rounded-2xl focus-within:border-white/10 transition-all shadow-2xl relative overflow-hidden p-1">
                 <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
 
                   <textarea
@@ -523,7 +523,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
             onClick={() => scrollToBottom()}
-            className="fixed bottom-24 sm:bottom-32 right-4 sm:right-12 z-50 w-10 h-10 rounded-full bg-white text-black shadow-2xl flex items-center justify-center hover:bg-zinc-200 transition-all border-4 border-black/20 group backdrop-blur-md"
+            className="fixed bottom-24 sm:bottom-32 right-4 sm:right-12 z-50 w-10 h-10 rounded-full bg-white text-black shadow-2xl flex items-center justify-center hover:bg-zinc-200 transition-all border-4 border-black/20 group"
             aria-label="Scroll to bottom"
           >
             <div className="absolute inset-0 rounded-full bg-white/20 animate-ping group-hover:hidden" />

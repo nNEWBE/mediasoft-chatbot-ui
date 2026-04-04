@@ -91,10 +91,10 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-[#050505] text-zinc-100 overflow-hidden font-outfit relative">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-15%] left-[-15%] w-[40%] h-[40%] rounded-full bg-white/3 blur-[140px] animate-pulse" />
-        <div className="absolute bottom-[-15%] right-[-15%] w-[40%] h-[40%] rounded-full bg-white/2 blur-[140px] animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-white/1 blur-[160px]" />
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-50">
+        <div className="absolute top-[-15%] left-[-15%] w-[40%] h-[40%] rounded-full bg-white/3 blur-[100px]" />
+        <div className="absolute bottom-[-15%] right-[-15%] w-[40%] h-[40%] rounded-full bg-white/2 blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-white/1 blur-[120px]" />
       </div>
 
       <AnimatePresence>
@@ -117,7 +117,7 @@ export default function DashboardLayout({
           opacity: 1
         }}
         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-        className={`fixed lg:relative z-50 bg-[#080808]/60 backdrop-blur-2xl border-r border-white/5 flex flex-col h-full overflow-hidden shrink-0 shadow-2xl group/sidebar ${isMobile && !sidebarOpen ? 'pointer-events-none' : ''}`}
+        className={`fixed lg:relative z-50 bg-[#080808] border-r border-white/5 flex flex-col h-full overflow-hidden shrink-0 shadow-2xl group/sidebar ${isMobile && !sidebarOpen ? 'pointer-events-none' : ''}`}
       >
         <div className="p-4 lg:p-6 flex items-center justify-between border-b border-white/5">
           <AnimatePresence mode="wait">
@@ -256,7 +256,7 @@ export default function DashboardLayout({
       </motion.aside>
 
       <main className="flex-1 flex flex-col min-w-0 bg-transparent font-outfit relative z-10 transition-all">
-        <header className="h-16 border-b border-white/5 bg-black/20 backdrop-blur-xl flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40 shadow-sm">
+        <header className="h-16 border-b border-white/5 bg-[#080808] flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40 shadow-sm">
           <div className="flex items-center gap-3 lg:gap-4">
               <button
                 onClick={toggleSidebar}
@@ -338,8 +338,8 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <div className="flex-1 relative min-h-0 overflow-hidden">
-          <div className="absolute inset-0 overflow-y-auto">
+        <div className="flex-1 relative min-h-0 overflow-hidden transform-gpu">
+          <div className="absolute inset-0 overflow-y-auto will-change-scroll transform-gpu">
             {children}
           </div>
         </div>
