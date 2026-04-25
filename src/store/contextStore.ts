@@ -47,8 +47,8 @@ export const useContextStore = create<ContextState>((set, get) => ({
       const { data } = await api.get('/chatbot/resources');
       set({ contexts: data.data || [] });
     } catch (error: any) {
-      console.error('Failed to fetch contexts:', error);
-      toast.error(error.response?.data?.message || 'Failed to load contexts');
+      console.error('Failed to fetch contexts:', error?.message || error?.response?.data?.message || error);
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to load contexts');
     } finally {
       set({ isLoading: false });
     }
